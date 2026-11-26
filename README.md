@@ -55,7 +55,7 @@ sh scripts/build.sh
 
 [Исследование](RESEARCH.md), [архитектура](ARCHITECTURE.md),
 [риски](RISKS.md), [безопасность](SECURITY.md), [план](TODO.md),
-[прогресс](PROGRESS.md). К BMW не подключались. GitHub содержит приватные
+[прогресс](PROGRESS.md). К BMW не подключались. GitHub содержит публичные
 исходники и draft candidate, не активный установочный канал Store.
 
 ## Макет интерфейса

@@ -51,3 +51,11 @@ was tested after UI hide with mocked SDK transport; real MainApp still unverifie
 26 boundary/lifecycle/mock-RHMI tests pass. Candidate packages will remain a draft
 until target ABI/SDK/UID/network/install/rollback evidence and review are available.
 No target endpoint or read-only permission supplied yet; no vehicle access.
+
+## Source repository made public
+
+On 2026-11-26 the owner explicitly requested public visibility. All three
+existing source-history commits were scanned for credential/private-key,
+personal path/email and owner-endpoint patterns before changing visibility.
+The repository is now public; draft prereleases remain drafts. This does not
+activate a Store catalog or validate vehicle installation.
