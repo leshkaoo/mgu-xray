@@ -5,6 +5,7 @@ import http.server
 import json
 import os
 import pathlib
+import select
 import signal
 import socket
 import ssl
@@ -52,6 +53,21 @@ def wait_port(port, child=None):
         except OSError:
             time.sleep(.1)
     raise RuntimeError('fixture listener timeout')
+
+def wait_engine_started(child):
+    # A transient port reservation during supervisor preflight is not a live
+    # proxy. Wait for lifecycle start before probing listeners. This also keeps
+    # the invalid-UUID test from mistaking connection-refused for auth denial.
+    deadline = time.monotonic() + 20
+    while time.monotonic() < deadline:
+        if child.poll() is not None:
+            raise RuntimeError('fixture client exited before engine startup')
+        readable, _, _ = select.select([child.stdout], [], [], .2)
+        if readable:
+            line = child.stdout.readline()
+            if line.strip() in [b'engine started; upstream connectivity not yet verified', b'native controller: running']:
+                return
+    raise RuntimeError('fixture engine startup timeout')
 
 def reserve_port():
     with socket.socket() as s:
@@ -140,6 +156,8 @@ def main():
                 payload=json.dumps(generated).encode()
             client=subprocess.Popen(command,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
             children.append(client);client.stdin.write(payload);client.stdin.close()
+            if os.environ.get('MGU_FIXTURE_DEBUG') != '1':
+                wait_engine_started(client)
             wait_port(socks_port,client);wait_port(http_port,client)
             url='http://127.0.0.1:'+str(target.server_port)+'/'
             def request(proxy):
@@ -167,17 +185,34 @@ def main():
             if r.returncode or r.stdout!=MARKER:
                 raise RuntimeError('recovery failed')
             results.append('upstream recovery: PASS')
-            stop(client)
+            if globals().get('TEST_PARENT_LOSS', False):
+                client.kill()
+                client.wait(timeout=3)
+                deadline = time.monotonic() + 8
+                while True:
+                    try:
+                        for port in [socks_port, http_port]:
+                            with socket.socket() as probe:
+                                probe.bind(('127.0.0.1', port))
+                        break
+                    except OSError:
+                        if time.monotonic() >= deadline:
+                            raise RuntimeError('UI parent death left proxy running')
+                        time.sleep(.1)
+                results.append('UI SIGKILL -> supervisor parent monitor closes listeners: PASS')
+            else:
+                stop(client)
             for port in [socks_port,http_port]:
                 with socket.socket() as s:
                     s.bind(('127.0.0.1',port))
-            results.append('SIGTERM removes both listeners: PASS')
+            results.append(('parent-loss cleanup' if globals().get('TEST_PARENT_LOSS', False) else 'SIGTERM') + ' removes both listeners: PASS')
             # Correctly formed but unauthorized identity must not reach target.
             wrong=uri.replace(identity,'00000000-0000-4000-8000-000000000002')
             rejected=subprocess.Popen([str(SUPERVISOR),'-run','-engine',str(ENGINE),
                 '-engine-sha256',digest,'-socks-port',str(socks_port),'-http-port',str(http_port)],
-                stdin=subprocess.PIPE,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+                stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL)
             children.append(rejected);rejected.stdin.write(wrong.encode());rejected.stdin.close()
+            wait_engine_started(rejected)
             wait_port(socks_port,rejected)
             denied=request(socks_proxy)
             if denied.returncode==0 or MARKER in denied.stdout:

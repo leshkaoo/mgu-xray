@@ -2,6 +2,11 @@
 
 **Локальный инженерный прототип, не beta и не готовый пакет для автомобиля.**
 
+Подготовлен **кандидат 0.2.0**: нативный RHMI RU/EN экран, foreground-контроллер,
+согласованные engine/app пакеты и каталог Store. Это ещё **не проверенная
+установка на BMW**. [Состав и ограничения](packaging/CANDIDATE.md),
+[фактические проверки](packaging/CANDIDATE_TEST_REPORT.md).
+
 Самостоятельный userspace-прокси на Xray для будущего приложения iDrive 7.
 Без глобального VPN, изменения маршрутов/DNS/firewall и доступа к CAN.
 Машина не подключалась; ABI/ядро именно G20 владельца не проверены.
@@ -16,7 +21,7 @@
 - Проверка занятости портов, ограниченные повторы, остановка по SIGTERM.
 - Локальные Go-тесты, синтетический REALITY-стенд, исследования формата Store.
 
-XHTTP, подписки/Happ-export, хранилище серверов, UI RU/EN на iDrive, метрики,
+XHTTP, подписки/Happ-export, хранилище серверов, проверка UI на iDrive, метрики,
 жёсткие лимиты ресурсов, интеграция с приложениями и установка на MGU ещё не
 реализованы. Полный JSON клиента с routing/dns/несколькими outbound намеренно
 отклоняется, а не выполняется. Корректность подключения проверяется отдельно
@@ -50,7 +55,14 @@ sh scripts/build.sh
 
 [Исследование](RESEARCH.md), [архитектура](ARCHITECTURE.md),
 [риски](RISKS.md), [безопасность](SECURITY.md), [план](TODO.md),
-[прогресс](PROGRESS.md). К BMW не подключались. Этот репозиторий — приватный снимок исходников, не установочный релиз.
+[прогресс](PROGRESS.md). К BMW не подключались. GitHub содержит приватные
+исходники и draft candidate, не активный установочный канал Store.
+
+## Макет интерфейса
+
+[Симулятор](simulator/README.md): `simulator/index.html` открывается локально в
+браузере, показатели синтетические. Он не совпадает с нативным RHMI списком
+кандидата и не является интерфейсом работающего Xray.
 
 ## English
 
@@ -61,10 +73,5 @@ Linux cross-builds do not verify the owner's head unit ABI or runtime.
 See TEST_REPORT.md for actual executed tests and remaining gates. No OEM,
 CAN, network, firmware, jailbreak or vehicle changes are performed. XHTTP,
 Happ subscriptions, iDrive UI, per-app integration and hard resource controls
-are not implemented. No public release or paid infrastructure.
-
-## Интерактивный макет
-
-[Открыть инструкцию симулятора](simulator/README.md). Скачайте `simulator/index.html` и откройте локально в браузере. Это синтетический UI-концепт, не приложение MGU и не интерфейс работающего Xray. Видео: `simulator/output/MGU-Xray-demo.mp4`.
-
-GitHub Actions запускаются только вручную; автоматические сборки отключены. Бинарные пакеты движка и исходники сторонних checkout не включены.
+are not production-ready. Candidate 0.2.0 adds an experimental native RHMI
+foreground control, not a verified BMW release. No public release or paid infrastructure.

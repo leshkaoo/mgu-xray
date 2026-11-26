@@ -1,5 +1,16 @@
 # MGU-Xray — architecture, local prototype 0.1.0-dev
 
+## Candidate 0.2.0 extension
+
+Experimental original OAP/RHMI app + Node controller now exist separately from
+the browser simulator. Controller spawns the pinned supervisor under the OAP
+app UID, feeds a restricted local profile over stdin, and has no listening
+control API. UI hide/shutdown stops the proxy; supervisor monitors the parent
+PID so abrupt UI death also cancels it. No tool services, recmgr hooks or
+autostart are introduced. Native SDK/ABI and all installation lifecycle remain
+unverified. The following 0.1.0 design/limitations are historical; current
+candidate boundaries and remaining gates are in `packaging/CANDIDATE.md`.
+
 ## Boundaries
 
 Untrusted import → strict allowlist parser → canonical Xray JSON → pinned Xray process. The supervisor owns only its child; no shell, systemctl, firewall, resolver, route, OEM file or app setting changes. Secrets arrive through stdin, not CLI arguments or temporary config files. Child output is discarded to prevent credential-bearing diagnostics. The private temporary directory contains only the hash-verified executable copy. No analytics, subscription fetch, pairing or permanent control listener.

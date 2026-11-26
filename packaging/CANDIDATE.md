@@ -1,0 +1,54 @@
+# MGU-Xray 0.2.0 — установочный кандидат, НЕ проверенная beta
+
+Подготовлены два согласованных пакета и каталог Store schema 2:
+
+- `izum-mgu-xray@0.2.0.tgz`: статические linux/amd64 Xray и supervisor, лицензии/уведомления. Существующая структура tool kit. **Без units, enable/restart/recmgr, hooks, drop-ins или автозапуска.**
+- `izum_mgu_xray@0.2.0.tgz`: исходный OAP/RHMI пакет (`build: unit`), оригинальные RU/EN строки, иконка, описание интерфейса, контроллер. SDK BMW не включён; устанавливаемый OAP bundle должен собрать Store из собственного штатного donor на MGU.
+- `catalog.json`: engine + app, размеры/SHA256 и зависимость app на engine 0.2.0. Относительные artifact URL подходят локальной папке/USB. Для GitHub catalog private-release нужны URL API assets, не ссылки на исходники; их формируют только после загрузки assets.
+- `usb/mgu-repo/izum-mgu-xray/`: те же два пакета, каталог и контрольные суммы. Это подготовленная структура, **не проверенная флешка восстановления**.
+
+## Реальное поведение кандидата
+
+Интерфейс — штатный RHMI `LT_State_Wide` со списком, не HTML и не картинка из симулятора. Русский по умолчанию, переключатель English/Русский. Кнопки Start/Stop, состояние процесса, время текущего запуска движка и число его перезапусков. Задержка и трафик явно не измеряются. Состояние «движок запущен · сеть не проверена» НЕ является health check серверного канала. Внешний вид, rotary/touch и SDK-вызовы на MGU пока не проверены.
+
+Запуск только вручную, без автозапуска и фоновой службы. При `changeVisibility: false` приложение останавливает supervisor. Поэтому использовать этот первый кандидат для фонового проксирования другого приложения пока нельзя обещать. Поведение HMI foreground/background надо проверить на цели и спроектировать отдельно. Node-контроллер не вызывает shell, systemctl, mount, сетевые утилиты или OEM/CAN API. Он запускает Go supervisor от UID OAP-приложения. Дочерний Xray наследует этот UID; доступ к интернету зависит от реальной интеграции Store/mgu-uplink.
+
+Хеши linux supervisor/engine зафиксированы в `src/deployment.js`. Tool устанавливается по исходно документированному `/var/opt/izum-mgu-xray/current/`. После обновления engine требуется согласованная версия UI; при несовпадении хеша запуск запрещается. Перезапуск на ошибке остаётся ограниченным в Go supervisor (не бесконечный цикл Node).
+
+Go supervisor с `-parent-pid` проверяет непосредственного родителя и отменяет запуск, когда UI-процесс исчезает. Проверен фактический SIGKILL тестового Node-адаптера с закрытием обоих слушателей на Mac. Это не доказывает все варианты forced-death containment на Linux/MGU.
+
+## Настройка и секреты
+
+Водительского ввода профиля на экран MGU нет: скорость/парковка не определяются. Настройка — только вне driving display, на припаркованной машине после разрешённой проверки/установки. Контроллер ожидает `<app package root>/private/profile.txt` и каталог `private` с владельцем UID приложения, каталог 0700, файл 0600. OAP root определяется из расположения установленного bundle, а не предполагается заранее. Профиль должен быть VLESS TCP REALITY URI или поддерживаемым подмножеством Xray JSON. Не включать его в Git/пакеты.
+
+В кандидат не входит средство безопасного переноса/создания этого файла на MGU: сначала нужно проверить реальный путь, владение и доступный канал. При отсутствии файла, неверных правах, symlink или размере >64 KiB приложение отказывает в запуске. Ошибки обезличены, stderr дочернего процесса не читается. Секрет передаётся supervisor через stdin. Подписки, QR/pairing, XHTTP, выбор списка серверов и сохранение настроек не реализованы.
+
+## Что мешает выпуску в активный Store
+
+1. На конкретном MGU не проверены ABI/kernel/libc/syscalls, noexec/права, Node/SDK, установленный updater/deploy, app UID, пути данных, порты и uplink.
+2. Не проверены настоящий BMW donor, привязка RHMI entry point, rotary/touch и foreground lifecycle. Локальный mock и синтетический donor не являются BMW SDK.
+3. Нет исполненных на MGU install/update/remove/rollback и recovery-проверок; нет доказательства сохранности OEM UI/сервисов после установки. Даже стандартная установка OAP может менять реестр приложения/служебные данные Store, поэтому отсутствие наших hooks не означает нулевые изменения машины.
+4. OAP `cpuLimit`/`memoryThresholdKB` — метаданные, не доказанный hard resource cap дочерних процессов. Ограничения и полный Linux process containment остаются открыты.
+5. Loopback SOCKS5/HTTP без аутентификации: доступ с локальных UID/tailnet forwarding требует проверки. Не добавлять LAN listener или ACL вслепую.
+6. Для нового UI/controller/parent-watch нет независимого повторного ревью. Предыдущие ревью относятся к 0.1.0.
+
+Поэтому публикация делается **draft prerelease**, не активный release `catalog`; корневой `mgu-repo.json` не включён. Store не должен предлагать эту непроверенную сборку как готовую установку. `mgu-repo.json.example` — только пример app-части, без prebuilt engine tree, не полный источник для branch-установки. Приватный GitHub-репозиторий исходников — не установочный URL.
+
+## Воспроизведение локально
+
+Нужны существующие pinned checkout Xray и mgu-store из `RESEARCH.md`, Go toolchains, Node и Python. Никакая команда ниже не устанавливает пакет на MGU:
+
+```sh
+sh scripts/build.sh
+python3 scripts/prepare-app.py
+go test -race ./...
+go vet ./...
+node scripts/test-native.cjs
+python3 scripts/e2e-local.py
+python3 scripts/e2e-native.py
+python3 scripts/collect-notices.py
+python3 scripts/package-candidate.py
+node scripts/verify-candidate.cjs
+```
+
+Последние фактические результаты: `CANDIDATE_TEST_REPORT.md`. Контрольные суммы истины после каждой сборки: `dist/candidate/SHA256SUMS`. Изменение документации тоже меняет engine toolkit bytes.

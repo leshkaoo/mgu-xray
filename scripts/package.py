@@ -47,6 +47,10 @@ def main():
     payload = {'xray': (engine, 0o755), 'mgu-xray': (supervisor, 0o755)}
     for name in ['README.engineering.md']:
         payload[name] = ((ROOT / 'packaging' / name).read_bytes(), 0o644)
+    for name in ['CANDIDATE.md', 'CANDIDATE_TEST_REPORT.md']:
+        path = ROOT / 'packaging' / name
+        if path.is_file():
+            payload[name] = (path.read_bytes(), 0o644)
     for entry in manifest.get('files', []):
         relative = Path(entry['path'])
         if relative.is_absolute() or '..' in relative.parts:

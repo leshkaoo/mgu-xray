@@ -1,0 +1,39 @@
+{
+  "name": "izum_mgu_xray",
+  "version": "0.2.0",
+  "private": true,
+  "mguHmi": [
+    "ID7"
+  ],
+  "mguInternet": true,
+  "description": "Experimental foreground-only REALITY proxy control. Not target-validated.",
+  "main": "javascript/runner.js",
+  "license": "MIT",
+  "oapAppSettings": {
+    "maxDiskUsage": 26214400,
+    "cpuLimit": 20,
+    "memoryThresholdKB": 98304,
+    "priority": "PRIO_MEDIUM",
+    "visibility": "FOREGROUND",
+    "latencyClass": "FOREGROUND",
+    "loggingId": "MXRY",
+    "userLoginRequired": false,
+    "backgroundPriority": 150,
+    "someipManifest": "manifest.json"
+  },
+  "files": [
+    "config",
+    "rhmiData",
+    "package.json",
+    "permissions.json",
+    "manifest.json",
+    "javascript",
+    "LICENSE"
+  ],
+  "dependencies": {
+    "oap-sdk": "24.10.2"
+  },
+  "engines": {
+    "node": ">=8.9.4"
+  }
+}

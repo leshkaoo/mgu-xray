@@ -17,10 +17,18 @@ jobs:
           git init research/upstream/XTLS--Xray-core
           git -C research/upstream/XTLS--Xray-core fetch --depth 1 https://github.com/XTLS/Xray-core.git 676eaf66f8f05d4d558ee7a74b4736623d3feeb9
           git -C research/upstream/XTLS--Xray-core checkout --detach FETCH_HEAD
+          git init research/upstream/robertnisipeanu--mgu-store
+          git -C research/upstream/robertnisipeanu--mgu-store fetch --depth 1 https://github.com/robertnisipeanu/mgu-store.git 37702a880f1ed5fd346f4c944127fb276920be9c
+          git -C research/upstream/robertnisipeanu--mgu-store checkout --detach FETCH_HEAD
       - run: go test -race ./...
       - run: go vet ./...
       - run: python3 scripts/test-package.py
       - run: sh scripts/build.sh
+      - run: python3 scripts/prepare-app.py
+      - run: node scripts/test-native.cjs
       - run: python3 scripts/e2e-local.py
+      - run: python3 scripts/e2e-native.py
       - run: python3 scripts/collect-notices.py
       - run: python3 scripts/package.py
+      - run: python3 scripts/package-candidate.py
+      - run: node scripts/verify-candidate.cjs

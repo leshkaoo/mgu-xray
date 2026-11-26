@@ -36,11 +36,18 @@ func run() error {
 	socksPort := f.Int("socks-port", 10808, "loopback SOCKS5 port (override for isolated local testing)")
 	httpPort := f.Int("http-port", 10809, "loopback HTTP port (override for isolated local testing)")
 	start := f.Bool("run", false, "run validated profile until interrupted (local prototype only)")
+	parentPID := f.Int("parent-pid", 0, "optional owning UI PID; stop when it exits")
 	if e := f.Parse(os.Args[1:]); e != nil {
 		return e
 	}
 	if f.NArg() != 0 {
 		return errors.New("pass profile via stdin, not arguments")
+	}
+	if *parentPID < 0 || (*parentPID != 0 && *parentPID != os.Getppid()) {
+		return errors.New("owning UI is not this process parent")
+	}
+	if *parentPID != 0 {
+		go watchParent(ctx, stop, *parentPID, 500*time.Millisecond, os.Getppid)
 	}
 	c, e := profile.Read(os.Stdin)
 	if e != nil {
@@ -148,6 +155,24 @@ func run() error {
 		}
 	}
 	return errors.New("engine retry budget exhausted; stopped")
+}
+
+// A foreground app owns this supervisor. No daemon or boot registration is
+// needed: loss of the UI parent cancels normal supervision and stops Xray.
+func watchParent(ctx context.Context, cancel context.CancelFunc, expected int, interval time.Duration, getParent func() int) {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			if getParent() != expected {
+				cancel()
+				return
+			}
+		}
+	}
 }
 
 // Copy and hash the same bytes in one pass. The private copy is not executable
