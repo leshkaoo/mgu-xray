@@ -1,11 +1,12 @@
 # MGU-Xray — architecture, local prototype 0.1.0-dev
 
-## Candidate 0.2.0 extension
+## Candidate 0.2.1 extension
 
 Experimental original OAP/RHMI app + Node controller now exist separately from
 the browser simulator. Controller spawns the pinned supervisor under the OAP
 app UID, feeds a restricted local profile over stdin, and has no listening
-control API. UI hide/shutdown stops the proxy; supervisor monitors the parent
+control API. UI hide releases HMI visibility but retains ACTIVE while a supervisor exists.
+Explicit Stop or manager shutdown stops the proxy; supervisor monitors the parent
 PID so abrupt UI death also cancels it. No tool services, recmgr hooks or
 autostart are introduced. Native SDK/ABI and all installation lifecycle remain
 unverified. The following 0.1.0 design/limitations are historical; current

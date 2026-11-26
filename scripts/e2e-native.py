@@ -11,6 +11,7 @@ fixture = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(fixture)
 fixture.SUPERVISOR = root / 'native-fixture.cjs'
 fixture.TEST_PARENT_LOSS = True
+fixture.TEST_NATIVE_BACKGROUND = True
 with tempfile.TemporaryDirectory(prefix='mgu-native-suite-') as temp:
     os.environ['MGU_FIXTURE_TMPDIR'] = temp
     fixture.main()

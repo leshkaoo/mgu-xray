@@ -1,6 +1,6 @@
 # Local milestone handoff — 2026-11-26
 
-**0.2.0 candidate update:** see `packaging/CANDIDATE.md` and
+**0.2.1 candidate update:** see `packaging/CANDIDATE.md` and
 `packaging/CANDIDATE_TEST_REPORT.md`. A separate native app source package and
 matching engine tool kit can now be built. Private source repository:
 https://github.com/leshkaoo/mgu-xray . This is not an active Store source.

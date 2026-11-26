@@ -116,3 +116,13 @@ USB source импортируется штатным Store/installer; локал
 3. Independent architecture/security review с исправлениями.
 4. После отдельного разрешения — read-only ABI/version/port probe проверенной машины.
 5. После отдельных разрешений на **каждую запись** — parked stable-power install, настройки прокси и restore/rollback tests. До этого не beta и не target-ready.
+
+## Фоновый lifecycle — кандидат 0.2.1
+
+Существующее решение изучено до изменения: `JustAnotherPU/mgu-apps`, pinned
+`42cd2242d9e75c48aace6ee40274451a88c920a7`, `kit/runtime/life.js`:
+ACTIVE удерживается для скрытой работы (hold), HMI-visible учитывается отдельно;
+INACTIVE позволяет MainApp завершать ненужные процессы. Использована эта модель,
+не копировалась реализация. Наш сериализованный контроллер дополнительно проверяет
+отказы и отмену запуска. Это источник требований, не доказательство реального
+поведения установленного на машине MainApp/SDK. MEMORY_LOW/shutdown не обходятся.

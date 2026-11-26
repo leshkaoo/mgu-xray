@@ -10,7 +10,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / 'dist/candidate'
-VERSION = '0.2.0'
+VERSION = '0.2.1'
 STORE_COMMIT = '37702a880f1ed5fd346f4c944127fb276920be9c'
 
 
@@ -37,7 +37,7 @@ def main():
     catalog['components'].append({
         'id': 'izum_mgu_xray', 'kind': 'app', 'version': VERSION,
         'title': 'MGU-Xray · experimental candidate',
-        'description': 'Foreground-only native control. Not BMW-tested; not an approved vehicle release.',
+        'description': 'Background-capable native control. Not BMW-tested; not an approved vehicle release.',
         'mguHmi': ['ID7'], 'uninstallable': True, 'build': 'unit',
         'requires': {'mgu-deploy': '0.7.0', 'izum-mgu-xray': VERSION},
         'artifact': {'name': packed.name, 'size': packed.stat().st_size,

@@ -2,7 +2,7 @@
 
 **Локальный инженерный прототип, не beta и не готовый пакет для автомобиля.**
 
-Подготовлен **кандидат 0.2.0**: нативный RHMI RU/EN экран, foreground-контроллер,
+Подготовлен **кандидат 0.2.1**: нативный RHMI RU/EN экран, background-контроллер,
 согласованные engine/app пакеты и каталог Store. Это ещё **не проверенная
 установка на BMW**. [Состав и ограничения](packaging/CANDIDATE.md),
 [фактические проверки](packaging/CANDIDATE_TEST_REPORT.md).
@@ -73,5 +73,5 @@ Linux cross-builds do not verify the owner's head unit ABI or runtime.
 See TEST_REPORT.md for actual executed tests and remaining gates. No OEM,
 CAN, network, firmware, jailbreak or vehicle changes are performed. XHTTP,
 Happ subscriptions, iDrive UI, per-app integration and hard resource controls
-are not production-ready. Candidate 0.2.0 adds an experimental native RHMI
-foreground control, not a verified BMW release. No public release or paid infrastructure.
+are not production-ready. Candidate 0.2.1 adds an experimental native RHMI
+background-capable control, not a verified BMW release. No public release or paid infrastructure.

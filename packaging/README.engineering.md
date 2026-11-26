@@ -1,6 +1,6 @@
 # MGU-Xray — local engineering engine kit, NOT beta
 
-The optional 0.2.0 native app is a SEPARATE source package. It can explicitly
+The optional 0.2.1 native app is a SEPARATE source package. It can explicitly
 spawn this kit's supervisor after external secure profile provisioning; this
 tool kit itself still installs no service and starts nothing. See the current
 `CANDIDATE.md` and `CANDIDATE_TEST_REPORT.md` for candidate status and gates.

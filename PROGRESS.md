@@ -1,6 +1,6 @@
 # Progress — 2026-11-26
 
-## Candidate 0.2.0 preparation
+## Candidate 0.2.0 preparation (historical)
 
 Owner requested preparation of a BMW Store repository after authorizing private
 source upload to `leshkaoo/mgu-xray`. Added original native RHMI source package,
@@ -40,3 +40,14 @@ Other bots/services/Tunnel unchanged. No vehicle connections, CAN operations,
 OEM/backend/jailbreak/network changes, external publication or new paid
 infrastructure. Claude review used existing authenticated Claude Code access;
 no new API key or service subscription was provisioned.
+
+## Candidate 0.2.1 background preparation
+
+Owner requested background operation and a BMW installation build. Added work-based
+ACTIVE retention, HMI-visible separation, serialized/coalesced status calls,
+stop-cancels-pending-start, fail-closed lifecycle errors and hidden-render suppression.
+No autostart or root service introduced. Actual app.js + Control -> Go -> Xray
+was tested after UI hide with mocked SDK transport; real MainApp still unverified.
+26 boundary/lifecycle/mock-RHMI tests pass. Candidate packages will remain a draft
+until target ABI/SDK/UID/network/install/rollback evidence and review are available.
+No target endpoint or read-only permission supplied yet; no vehicle access.

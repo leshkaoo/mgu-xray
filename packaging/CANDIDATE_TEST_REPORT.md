@@ -1,4 +1,16 @@
-# Candidate 0.2.0 — фактическая проверка, 2026-11-26
+# Candidate 0.2.1 — фоновый режим, 2026-11-26
+
+Среда: Mac M4 arm64. Машина недоступна; разрешение/endpoint для подключения не предоставлены. Это не отчёт об исполнении на MGU.
+
+- `node scripts/test-native.cjs`: PASS, 26 проверок. Новое: hide оставляет работающий Control ACTIVE без HMI-visible; скрытый UI не обновляет RHMI; reopen не порождает второй процесс; скрытый Stop освобождает retention; Stop отменяет отложенный Start; отказ status channel запрещает запуск без retry-loop; восстановление канала допускает новый ручной Start; shutdown освобождает фон.
+- `python3 scripts/e2e-native.py`: PASS. Теперь адаптер исполняет **настоящий app.js вместе с Control**, а не только Control. OnlineApp/RHMI transport явно подставной. Перед сообщением readiness адаптер посылает `changeVisibility: false` и проверяет ACTIVE=true, HMI-visible=false, child существует. Только после этого fixture передаёт настоящий трафик SOCKS5/HTTP через Go/Xray/синтетический REALITY-server. Прошли обрыв без direct fallback, восстановление, неверный UUID и SIGKILL UI с освобождением портов.
+- `python3 scripts/e2e-local.py`: PASS, сохранён прямой Go supervisor e2e с SIGTERM.
+- Устранён дефект тестового lifecycle-reader: BufferedReader.readline мог заранее забрать следующую строку, после чего select ждал пустой OS pipe. Теперь selected fd читается через os.read с ограниченным буфером и разбором нескольких строк. Native readiness требует подтверждения hide, не просто живого слушателя.
+- Go supervisor и Xray в 0.2.1 не менялись. Go race/vet, cross-build и воспроизводимость executable относятся к выполненным проверкам 0.2.0 ниже; повторно исполнен реальный e2e с этими бинарниками.
+
+Пакеты 0.2.1 проверяются `scripts/verify-candidate.cjs`: настоящий upstream pure validateTool (без installer main), tamper rejection, matching binary hashes, source-package linking с synthetic donor. Это не подтверждение реального SDK, удержания процесса MainApp или install/rollback на автомобиле.
+
+## История: candidate 0.2.0
 
 Среда: Mac M4 arm64. Доступа к машине и установки не было. Linux/amd64 — cross-build, не исполнение Linux.
 

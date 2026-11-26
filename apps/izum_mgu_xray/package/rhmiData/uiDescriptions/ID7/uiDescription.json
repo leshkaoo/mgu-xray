@@ -47,6 +47,28 @@
         },
         "21": {
           "type": "label",
+          "name": "XR_mode",
+          "properties": {
+            "Visible": {
+              "value": 1,
+              "type": "UInt"
+            },
+            "Focusable": {
+              "value": 0,
+              "type": "UInt"
+            }
+          },
+          "rows": [
+            {
+              "Text": {
+                "value": "mode",
+                "type": "Text"
+              }
+            }
+          ]
+        },
+        "22": {
+          "type": "label",
           "name": "XR_status",
           "properties": {
             "Visible": {
@@ -67,7 +89,7 @@
             }
           ]
         },
-        "22": {
+        "23": {
           "type": "label",
           "name": "XR_detail",
           "properties": {
@@ -89,7 +111,7 @@
             }
           ]
         },
-        "23": {
+        "24": {
           "type": "button",
           "name": "XR_start",
           "properties": {
@@ -111,7 +133,7 @@
             }
           ]
         },
-        "24": {
+        "25": {
           "type": "button",
           "name": "XR_stop",
           "properties": {
@@ -133,7 +155,7 @@
             }
           ]
         },
-        "25": {
+        "26": {
           "type": "label",
           "name": "XR_session",
           "properties": {
@@ -155,7 +177,7 @@
             }
           ]
         },
-        "26": {
+        "27": {
           "type": "label",
           "name": "XR_metrics",
           "properties": {
@@ -177,7 +199,7 @@
             }
           ]
         },
-        "27": {
+        "28": {
           "type": "label",
           "name": "XR_limits",
           "properties": {
@@ -199,7 +221,7 @@
             }
           ]
         },
-        "28": {
+        "29": {
           "type": "label",
           "name": "XR_setup",
           "properties": {
@@ -221,7 +243,7 @@
             }
           ]
         },
-        "29": {
+        "30": {
           "type": "button",
           "name": "XR_language",
           "properties": {

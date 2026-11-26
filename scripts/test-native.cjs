@@ -62,11 +62,11 @@ async function main() {
 
     // Explicit mock contract: resolves our state/component/entry wiring only.
     // It cannot validate the BMW donor's actual implementation or firmware.
-    const values = {}, components = {};
+    const values = {}, components = {}; let writes = 0, active = false, hmiVisible = false, rejectActive = false;
     const description = JSON.parse(fs.readFileSync(path.join(root, 'apps/izum_mgu_xray/package/rhmiData/uiDescriptions/ID7/uiDescription.json')));
     Object.keys(description.containers['1'].components).forEach(id => {
         const c = description.containers['1'].components[id]; const emitter = new EventEmitter();
-        emitter.getId = () => Number(id); emitter.setValue = (row, cell, value) => { values[c.name] = value; return Promise.resolve(); }; components[c.name] = emitter;
+        emitter.getId = () => Number(id); emitter.setValue = (row, cell, value) => { writes++; values[c.name] = value; return Promise.resolve(); }; components[c.name] = emitter;
     });
     const rhmi = new EventEmitter(); rhmi.getByName = name => name === 'XR_Main' ? {} : components[name];
     rhmi.mapEntryState = () => Promise.resolve(); rhmi.openEntryState = () => Promise.resolve();
@@ -74,15 +74,15 @@ async function main() {
     class OnlineApp extends EventEmitter {
         constructor() { super(); instance = this; this.rhmiApplication = rhmi; this.appDescription = { application: { entryPoints: [{ uuid: 'fixture' }] } }; }
         getEntryPoints() { return [{ getDescription: () => ({ uuid: 'fixture' }), init: () => Promise.resolve(), setAvailability: () => Promise.resolve() }]; }
-        registerActive() { return Promise.resolve(); } registerInactive() { return Promise.resolve(); }
-        registerHmiVisible() { return Promise.resolve(); } unregisterHmiVisible() { return Promise.resolve(); }
+        registerActive() { if (rejectActive) return Promise.reject(new Error("fixture lifecycle error")); active = true; return Promise.resolve(); } registerInactive() { active = false; return Promise.resolve(); }
+        registerHmiVisible() { hmiVisible = true; return Promise.resolve(); } unregisterHmiVisible() { hmiVisible = false; return Promise.resolve(); }
         initialized() { return Promise.resolve(); } getLastExecutedEntryPointUuid() { return 'fixture'; }
         start() { this.emit('initialized'); return Promise.resolve(); }
     }
     class FakeControl extends EventEmitter {
-        constructor() { super(); this.starts = this.stops = 0; }
-        snapshot() { return { state: 'off', seconds: 0, retries: 0 }; }
-        start() { this.starts++; } stop() { this.stops++; return Promise.resolve(); } shutdown() { return this.stop(); }
+        constructor() { super(); this.starts = this.stops = 0; this.state = "off"; this.child = null; }
+        snapshot() { return { state: this.state, seconds: 0, retries: 0 }; }
+        start() { this.starts++; this.state = "running"; this.child = {}; this.emit("change"); } stop() { this.stops++; this.state = "off"; this.child = null; this.emit("change"); return Promise.resolve(); } shutdown() { return this.stop(); }
     }
     const entry = path.join(root, 'apps/izum_mgu_xray/src/app.js');
     vm.runInNewContext(fs.readFileSync(entry, 'utf8'), {
@@ -92,10 +92,28 @@ async function main() {
     });
     await new Promise(resolve => setImmediate(resolve));
     check('RHMI components mapped; Russian default', () => { assert.equal(instance.uiReady, true); assert.equal(values.XR_start, 'Запустить прокси'); });
-    check('native buttons and duplicate action dedupe', () => { components.XR_start.emit('action'); rhmi.emit('userEvent', { eventType: 'ACTION', sourceId: components.XR_start.getId() }); assert.equal(instance.control.starts, 1); });
+    components.XR_start.emit('action'); rhmi.emit('userEvent', { eventType: 'ACTION', sourceId: components.XR_start.getId() });
+    await new Promise(resolve => setImmediate(resolve));
+    check('native buttons and duplicate action dedupe', () => assert.equal(instance.control.starts, 1));
     check('RU/EN language switch', () => { components.XR_language.emit('action'); assert.equal(values.XR_start, 'Start proxy'); });
-    check('hiding app stops proxy', () => { instance.emit('changeVisibility', { visible: false }); assert.equal(instance.control.stops, 1); });
-    await instance.shutdown();
+    instance.emit('changeVisibility', { visible: false }); await instance.lifeQueue;
+    check('hide retains running proxy, ACTIVE without HMI visibility', () => { assert.equal(instance.control.stops, 0); assert(active); assert(!hmiVisible); });
+    check('hidden rendering sends no RHMI writes', () => { const before = writes; instance.render(); assert.equal(writes, before); });
+    await instance.open('fixture');
+    check('reopen displays existing process without duplicate launch', () => { assert.equal(instance.control.starts, 1); assert(active); assert(hmiVisible); });
+    instance.emit('changeVisibility', { visible: false }); await instance.lifeQueue;
+    await instance.requestStop(); await instance.lifeQueue;
+    check('explicit hidden stop releases ACTIVE retention', () => { assert(!active); assert.equal(instance.control.stops, 1); });
+    instance.requestStart(); instance.requestStop(); await new Promise(resolve => setImmediate(resolve));
+    check('stop cancels pending asynchronous start', () => assert.equal(instance.control.starts, 1));
+    rejectActive = true; instance.lifeSent.active = null;
+    instance.requestStart(); await new Promise(resolve => setImmediate(resolve));
+    check('failed lifecycle retention forbids engine launch without retry loop', () => { assert.equal(instance.control.starts, 1); assert(instance.failed); });
+    rejectActive = false; instance.emit('appStatusProxyReady'); await new Promise(resolve => setImmediate(resolve));
+    instance.requestStart(); await new Promise(resolve => setImmediate(resolve));
+    check('status channel recovery allows deliberate new start', () => assert.equal(instance.control.starts, 2));
+    instance.emit('shutdown'); await instance.shutdownPromise;
+    check('shutdown stops background work and releases retention', () => { assert(!active); assert(!hmiVisible); assert.equal(instance.control.child, null); });
     console.log('Native checks: ' + checks + ' passed (filesystem/process boundaries and mock RHMI contract).');
 }
 main().catch(error => { console.error(error); process.exitCode = 1; }).finally(() => fs.rmSync(temp, { recursive: true, force: true }));

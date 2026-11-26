@@ -13,7 +13,7 @@ const WORDS = {
         config: 'Нужен локальный профиль 0600 и проверенные бинарники',
         session: 'Работа движка: ', retries: 'Перезапусков: ',
         metrics: 'Задержка и трафик: не измеряются',
-        candidate: 'Кандидат 0.2.0 · на BMW не проверен'
+        candidate: 'Кандидат 0.2.1 · на BMW не проверен', mode: 'Работа в фоне · без автозапуска'
     },
     en: {
         off: 'Disconnected', starting: 'Starting…', running: 'Engine running · uplink unverified', retry: 'Restarting engine', stopping: 'Stopping…', error: 'Could not start',
@@ -23,7 +23,7 @@ const WORDS = {
         config: 'Needs local 0600 profile and verified binaries',
         session: 'Engine runtime: ', retries: 'Restarts: ',
         metrics: 'Latency and traffic: not measured',
-        candidate: 'Candidate 0.2.0 · not tested on BMW'
+        candidate: 'Candidate 0.2.1 · not tested on BMW', mode: 'Background operation · no autostart'
     }
 };
 
@@ -37,8 +37,16 @@ class XrayApp extends OnlineApp {
         this.lastPress = {};
         this.closing = false;
         this.pendingEntry = null;
+        this.visible = false;
+        this.seenForeground = false;
+        this.startRequested = false;
+        this.startSerial = 0;
+        this.failed = false;
+        this.lifeQueue = Promise.resolve();
+        this.lifeSent = { active: null, visible: null };
         this.control = new Control(Object.assign({}, deployment, { root: path.resolve(__dirname, '..') }));
-        this.control.on('change', () => this.render());
+        this.control.on('change', () => { this.render(); this.syncLifecycle().catch(() => this.fail()); });
+        this.on('appStatusProxyReady', () => { this.failed = false; this.syncLifecycle(true).catch(() => this.fail()); });
         this.on('initialized', () => Promise.resolve().then(() => this.setup()).catch(() => this.fail()));
         this.on('entryPointExecute', uuid => {
             this.pendingEntry = uuid;
@@ -47,28 +55,58 @@ class XrayApp extends OnlineApp {
         this.on('shutdown', () => this.shutdown().then(() => process.exit(0)));
         this.on('error', () => this.fail());
         this.on('changeVisibility', data => {
-            // Foreground-only first candidate: do not leave a proxy running
-            // when the app is hidden. Continued background use is not claimed.
-            if (data && data.visible === false) {
-                this.control.stop();
-                Promise.resolve(this.unregisterHmiVisible()).catch(() => {});
-                Promise.resolve(this.registerInactive()).catch(() => {});
-            }
+            if (!data || typeof data.visible !== 'boolean') return;
+            if (data.visible) this.seenForeground = true;
+            if (!data.visible && !this.seenForeground) return;
+            this.visible = data.visible;
+            this.syncLifecycle().catch(() => this.fail());
+            this.render();
         });
+    }
+    syncLifecycle(force) {
+        // ACTIVE is work retention, not HMI visibility. Serialize/coalesce SDK
+        // calls so a delayed hide/inactive cannot overtake a new start/open.
+        this.lifeQueue = this.lifeQueue.catch(() => {}).then(() => {
+            const active = !this.closing && (!this.seenForeground || this.visible || this.startRequested || !!this.control.child);
+            const visible = !this.closing && this.visible;
+            return Promise.resolve().then(() => {
+                if (!force && active === this.lifeSent.active) return;
+                return Promise.resolve(active ? this.registerActive() : this.registerInactive()).then(() => { this.lifeSent.active = active; });
+            }).then(() => {
+                if (!force && visible === this.lifeSent.visible) return;
+                return Promise.resolve(visible ? this.registerHmiVisible() : this.unregisterHmiVisible()).then(() => { this.lifeSent.visible = visible; });
+            }).catch(error => { this.lifeSent = { active: null, visible: null }; throw error; });
+        });
+        return this.lifeQueue;
+    }
+    requestStart() {
+        if (this.closing || this.failed || this.startRequested || this.control.child) return;
+        const serial = ++this.startSerial;
+        this.startRequested = true;
+        this.syncLifecycle().then(() => {
+            if (!this.closing && serial === this.startSerial) this.control.start();
+        }).catch(() => this.fail()).then(() => {
+            if (serial === this.startSerial) this.startRequested = false;
+            return this.syncLifecycle();
+        }).catch(() => this.fail());
+    }
+    requestStop() {
+        ++this.startSerial; this.startRequested = false;
+        return this.control.stop().then(() => this.syncLifecycle()).catch(() => this.fail());
     }
     setup() {
         if (!this.rhmiApplication) return Promise.resolve(this.initialized());
         const rhmi = this.rhmiApplication;
         const state = rhmi.getByName('XR_Main');
         if (!state) return Promise.reject(new Error('missing state'));
-        ['status', 'detail', 'session', 'metrics', 'limits', 'setup', 'candidate', 'start', 'stop', 'language'].forEach(name => {
+        ['status', 'detail', 'session', 'metrics', 'limits', 'setup', 'candidate', 'mode', 'start', 'stop', 'language'].forEach(name => {
             const component = rhmi.getByName('XR_' + name);
             if (!component) throw new Error('missing component');
             this.components[name] = component;
         });
         const actions = {
-            start: () => this.control.start(),
-            stop: () => this.control.stop(),
+            start: () => this.requestStart(),
+            stop: () => this.requestStop(),
             language: () => { this.language = this.language === 'ru' ? 'en' : 'ru'; this.written = {}; this.render(); }
         };
         const ids = {};
@@ -91,7 +129,7 @@ class XrayApp extends OnlineApp {
         return Promise.resolve(entry.init())
             .then(() => rhmi.mapEntryState(entry.getDescription().uuid, state))
             .then(() => entry.setAvailability('ENABLED'))
-            .then(() => this.registerActive())
+            .then(() => this.syncLifecycle())
             .then(() => this.initialized())
             .then(() => {
                 this.uiReady = true;
@@ -103,18 +141,18 @@ class XrayApp extends OnlineApp {
     }
     open(uuid) {
         if (this.closing) return Promise.resolve();
-        return Promise.resolve(this.registerActive()).then(() => this.registerHmiVisible())
-            .then(() => this.rhmiApplication.openEntryState(uuid));
+        this.visible = true; this.seenForeground = true; this.written = {};
+        return this.syncLifecycle().then(() => this.rhmiApplication.openEntryState(uuid)).then(() => this.render());
     }
     render() {
-        if (!this.uiReady || this.closing) return;
+        if (!this.uiReady || this.closing || !this.visible) return;
         const words = WORDS[this.language];
         const snapshot = this.control.snapshot();
         const runtime = Math.floor(snapshot.seconds / 60) + ':' + String(snapshot.seconds % 60).padStart(2, '0');
         const texts = {
-            status: words[snapshot.state], detail: snapshot.error ? words.config : 'SOCKS5 127.0.0.1:10808 / HTTP 127.0.0.1:10809',
+            status: words[this.failed ? 'error' : snapshot.state], detail: snapshot.error || this.failed ? words.config : 'SOCKS5 127.0.0.1:10808 / HTTP 127.0.0.1:10809',
             session: words.session + runtime + ' · ' + words.retries + snapshot.retries,
-            metrics: words.metrics, limits: words.limits, setup: words.setup, candidate: words.candidate,
+            metrics: words.metrics, limits: words.limits, setup: words.setup, candidate: words.candidate, mode: words.mode,
             start: words.start, stop: words.stop, language: words.language
         };
         Object.keys(texts).forEach(name => {
@@ -125,13 +163,18 @@ class XrayApp extends OnlineApp {
     }
     fail() {
         // Deliberately no exception, profile, SDK object or child output logs.
-        this.control.stop();
+        if (this.failed) return;
+        this.failed = true;
+        ++this.startSerial; this.startRequested = false;
+        if (this.control.child) this.control.stop();
+        this.render();
     }
     shutdown() {
         if (this.shutdownPromise) return this.shutdownPromise;
         this.closing = true;
+        ++this.startSerial; this.startRequested = false;
         clearInterval(this.interval);
-        this.shutdownPromise = this.control.shutdown().then(() => {
+        this.shutdownPromise = this.control.shutdown().then(() => this.syncLifecycle(true).catch(() => {})).then(() => {
             if (typeof this.destroyBundles === 'function') return Promise.resolve().then(() => this.destroyBundles()).catch(() => {});
         });
         return this.shutdownPromise;

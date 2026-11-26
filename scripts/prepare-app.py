@@ -8,7 +8,7 @@ import uuid
 import zlib
 
 ROOT = Path(__file__).resolve().parents[1]
-ID, VERSION = 'izum_mgu_xray', '0.2.0'
+ID, VERSION = 'izum_mgu_xray', '0.2.1'
 APP = ROOT / 'apps' / ID
 
 
@@ -35,7 +35,7 @@ def main():
     })
     write('package/package.json', {
         'name': ID, 'version': VERSION, 'private': True, 'mguHmi': ['ID7'], 'mguInternet': True,
-        'description': 'Experimental foreground-only REALITY proxy control. Not target-validated.',
+        'description': 'Experimental background-capable REALITY proxy control. Not target-validated.',
         'main': 'javascript/runner.js', 'license': 'MIT',
         'oapAppSettings': {
             'maxDiskUsage': 26214400, 'cpuLimit': 20, 'memoryThresholdKB': 98304,
@@ -77,7 +77,7 @@ def main():
     })
     components = {'10': {'type': 'title', 'name': 'XR_title', 'properties': {'Visible': {'value': 1, 'type': 'UInt'}}, 'rows': [{'Text': {'value': 'SID_XR_TITLE', 'type': 'StringId'}}]}}
     xml = ['<?xml version="1.0" encoding="UTF-8"?>', '<application>', '<container id="1" type="state" widget="LT_State_Wide">', '<layoutGroup id="100" name="Titlebar"><component id="10" type="title"><property id="2" value="1"/></component></layoutGroup>', '<layoutGroup id="200" name="List"><property id="3" value="1"/>']
-    rows = ['candidate', 'status', 'detail', 'start', 'stop', 'session', 'metrics', 'limits', 'setup', 'language']
+    rows = ['candidate', 'mode', 'status', 'detail', 'start', 'stop', 'session', 'metrics', 'limits', 'setup', 'language']
     for number, name in enumerate(rows, 20):
         button = name in ['start', 'stop', 'language']
         kind, widget, focus = ('button', 'LT_Button_1Row', 3) if button else ('label', 'LT_Label_1Row', 0)

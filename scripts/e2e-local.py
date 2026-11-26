@@ -59,14 +59,26 @@ def wait_engine_started(child):
     # proxy. Wait for lifecycle start before probing listeners. This also keeps
     # the invalid-UUID test from mistaking connection-refused for auth denial.
     deadline = time.monotonic() + 20
+    pending = b''
+    background_seen = False
     while time.monotonic() < deadline:
         if child.poll() is not None:
             raise RuntimeError('fixture client exited before engine startup')
         readable, _, _ = select.select([child.stdout], [], [], .2)
         if readable:
-            line = child.stdout.readline()
-            if line.strip() in [b'engine started; upstream connectivity not yet verified', b'native controller: running']:
-                return
+            # Read the descriptor, not BufferedReader.readline(): readline may
+            # prefetch the next lifecycle line into Python while select() then
+            # sees an empty OS pipe and waits forever for that buffered line.
+            pending += os.read(child.stdout.fileno(), 4096)
+            while b'\n' in pending:
+                line, pending = pending.split(b'\n', 1)
+                if line.strip() == b'fixture: UI hidden; proxy retained ACTIVE':
+                    background_seen = True
+                if line.strip() in [b'engine started; upstream connectivity not yet verified', b'native controller: running']:
+                    if globals().get('TEST_NATIVE_BACKGROUND', False) and not background_seen:
+                        raise RuntimeError('native fixture did not confirm hidden background state')
+                    return
+            pending = pending[-1024:]
     raise RuntimeError('fixture engine startup timeout')
 
 def reserve_port():
@@ -159,6 +171,8 @@ def main():
             if os.environ.get('MGU_FIXTURE_DEBUG') != '1':
                 wait_engine_started(client)
             wait_port(socks_port,client);wait_port(http_port,client)
+            if globals().get('TEST_NATIVE_BACKGROUND', False):
+                results.append('real app hidden, ACTIVE retained, HMI visibility released: PASS (SDK transport mocked)')
             url='http://127.0.0.1:'+str(target.server_port)+'/'
             def request(proxy):
                 return subprocess.run(['curl','--silent','--show-error','--max-time','15',

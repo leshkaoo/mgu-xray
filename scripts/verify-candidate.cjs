@@ -6,6 +6,7 @@ const root = path.resolve(__dirname, '..');
 const upstream = path.join(root, 'research/upstream/robertnisipeanu--mgu-store');
 assert.equal(cp.execFileSync('git', ['-C', upstream, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(), '37702a880f1ed5fd346f4c944127fb276920be9c');
 const out = path.join(root, 'dist/candidate');
+const version = JSON.parse(fs.readFileSync(path.join(root, 'apps/izum_mgu_xray/mgu-app.json'))).version;
 const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'mgu-candidate-verify-'));
 const hash = bytes => crypto.createHash('sha256').update(bytes).digest('hex');
 function unpack(file, dest) {
@@ -24,8 +25,8 @@ try {
         assert.deepEqual(component.mguHmi, ['ID7']);
     });
     const tool = path.join(temp, 'tool'), app = path.join(temp, 'app');
-    unpack(path.join(out, 'izum-mgu-xray@0.2.0.tgz'), tool);
-    const appMembers = unpack(path.join(out, 'izum_mgu_xray@0.2.0.tgz'), app);
+    unpack(path.join(out, 'izum-mgu-xray@' + version + '.tgz'), tool);
+    const appMembers = unpack(path.join(out, 'izum_mgu_xray@' + version + '.tgz'), app);
     assert(!appMembers.some(name => /(?:node_modules|private\/|profile\.txt|sdk\/)/.test(name)));
     const component = JSON.parse(fs.readFileSync(path.join(tool, 'component.json')));
     ['units', 'enable', 'restart', 'recmgr', 'dropins'].forEach(key => assert.deepEqual(component[key], []));

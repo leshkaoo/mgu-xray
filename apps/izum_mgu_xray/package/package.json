@@ -1,12 +1,12 @@
 {
   "name": "izum_mgu_xray",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "mguHmi": [
     "ID7"
   ],
   "mguInternet": true,
-  "description": "Experimental foreground-only REALITY proxy control. Not target-validated.",
+  "description": "Experimental background-capable REALITY proxy control. Not target-validated.",
   "main": "javascript/runner.js",
   "license": "MIT",
   "oapAppSettings": {
