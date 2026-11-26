@@ -1,3 +1,5 @@
+> Historical local-research snapshot. Subsequent owner authorization permits publication of 0.2.4; see RELEASE-0.2.4.md. Vehicle access remains unauthorized.
+
 # Local launch candidate 0.2.4 (not published)
 
 Baseline: public source 2db5194df5e6b6ded96bf647eae9d4be61b3f194 (0.2.2). The owner's installed bundle/version is unavailable. Public 0.2.3 was published under the earlier request before the local-only task was delivered; no publication is performed for this task.
