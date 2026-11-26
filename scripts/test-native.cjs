@@ -99,13 +99,13 @@ async function main() {
     });
     const rhmi = new EventEmitter(); rhmi.getByName = name => name === 'XR_Main' ? {} : components[name];
     rhmi.mapEntryState = () => Promise.resolve(); rhmi.openEntryState = () => Promise.resolve();
-    let instance, controlOptions;
+    let instance, controlOptions, handshake = false, proxyReady = false;
     class OnlineApp extends EventEmitter {
         constructor() { super(); instance = this; this.rhmiApplication = rhmi; this.appDescription = { application: { entryPoints: [{ uuid: 'fixture' }] } }; }
         getEntryPoints() { return [{ getDescription: () => ({ uuid: 'fixture' }), init: () => Promise.resolve(), setAvailability: () => Promise.resolve() }]; }
-        registerActive() { if (rejectActive) return Promise.reject(new Error("fixture lifecycle error")); active = true; return Promise.resolve(); } registerInactive() { active = false; return Promise.resolve(); }
+        registerActive() { assert(handshake && proxyReady, 'status before SDK handshake/proxy'); if (rejectActive) return Promise.reject(new Error("fixture lifecycle error")); active = true; return Promise.resolve(); } registerInactive() { active = false; return Promise.resolve(); }
         registerHmiVisible() { hmiVisible = true; return Promise.resolve(); } unregisterHmiVisible() { hmiVisible = false; return Promise.resolve(); }
-        initialized() { return Promise.resolve(); } getLastExecutedEntryPointUuid() { return 'fixture'; }
+        initialized() { handshake = true; return Promise.resolve(); } getLastExecutedEntryPointUuid() { return 'fixture'; }
         start() { this.emit('initialized'); return Promise.resolve(); }
     }
     class FakeControl extends EventEmitter {
@@ -117,8 +117,13 @@ async function main() {
     vm.runInNewContext(fs.readFileSync(entry, 'utf8'), {
         __dirname: path.join(temp, 'source/javascript'), process: { on: () => {}, exit: () => {} },
         setInterval, clearInterval, Date,
-        require: name => name === 'oap-sdk/src/core/OnlineApp.js' ? OnlineApp : name === './control.js' ? { Control: FakeControl } : name === './deployment.js' ? {} : require(name)
+        require: name => name === 'oap-sdk/src/core/OnlineApp.js' ? { OnlineApp } : name === './control.js' ? { Control: FakeControl } : name === './deployment.js' ? {} : require(name)
     });
+    await new Promise(resolve => setImmediate(resolve));
+    check('UI initialization does not wait for AppStatus proxy', () => { assert(instance.uiReady); assert(!instance.failed); });
+    instance.requestStart();
+    check('no engine launch before lifecycle channel ready', () => assert.equal(instance.control.starts, 0));
+    proxyReady = true; instance.emit('appStatusProxyReady');
     await new Promise(resolve => setImmediate(resolve));
     check('profile/runtime root uses persistent OAP home data not replaceable source', () => assert.equal(controlOptions.root, path.join(temp, 'data')));
     check('RHMI components mapped; Russian default', () => { assert.equal(instance.uiReady, true); assert.equal(values.XR_start, 'Запустить прокси'); });

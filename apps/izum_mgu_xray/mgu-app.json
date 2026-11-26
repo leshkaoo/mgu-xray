@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "id": "izum_mgu_xray",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "mguHmi": [
     "ID7"
   ],

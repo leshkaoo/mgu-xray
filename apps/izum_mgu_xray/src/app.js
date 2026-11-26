@@ -1,5 +1,7 @@
 'use strict';
-const OnlineApp = require('oap-sdk/src/core/OnlineApp.js');
+// Donor SDKs export either the constructor or a named OnlineApp export.
+const onlineAppModule = require('oap-sdk/src/core/OnlineApp.js');
+const OnlineApp = onlineAppModule.OnlineApp || onlineAppModule;
 const path = require('path');
 const Control = require('./control.js').Control;
 const deployment = require('./deployment.js');
@@ -13,7 +15,7 @@ const WORDS = {
         config: 'Нужен локальный профиль 0600 и проверенные бинарники',
         session: 'Работа движка: ', retries: 'Перезапусков: ',
         metrics: 'Задержка и трафик: не измеряются',
-        candidate: 'Кандидат 0.2.2 · на BMW не проверен', mode: 'Работа в фоне · без автозапуска'
+        candidate: 'Версия 0.2.3 · на BMW не проверен', mode: 'Работа в фоне · без автозапуска'
     },
     en: {
         off: 'Disconnected', starting: 'Starting…', running: 'Engine running · uplink unverified', retry: 'Restarting engine', stopping: 'Stopping…', error: 'Could not start',
@@ -23,7 +25,7 @@ const WORDS = {
         config: 'Needs local 0600 profile and verified binaries',
         session: 'Engine runtime: ', retries: 'Restarts: ',
         metrics: 'Latency and traffic: not measured',
-        candidate: 'Candidate 0.2.2 · not tested on BMW', mode: 'Background operation · no autostart'
+        candidate: 'Version 0.2.3 · not tested on BMW', mode: 'Background operation · no autostart'
     }
 };
 
@@ -43,12 +45,14 @@ class XrayApp extends OnlineApp {
         this.startSerial = 0;
         this.failed = false;
         this.lifeQueue = Promise.resolve();
+        this.sdkInitialized = false;
+        this.statusReady = false;
         this.lifeSent = { active: null, visible: null };
         // Installed bundle: <OAP home>/source/javascript/app.js. Only data/
         // is carried across Store reinstall/update/rollback, not source/.
         this.control = new Control(Object.assign({}, deployment, { root: path.resolve(__dirname, '..', '..', 'data') }));
         this.control.on('change', () => { this.render(); this.syncLifecycle().catch(() => this.fail()); });
-        this.on('appStatusProxyReady', () => { this.failed = false; this.syncLifecycle(true).catch(() => this.fail()); });
+        this.on('appStatusProxyReady', () => { this.statusReady = true; this.failed = false; this.syncLifecycle(true).catch(() => this.fail()); });
         this.on('initialized', () => Promise.resolve().then(() => this.setup()).catch(() => this.fail()));
         this.on('entryPointExecute', uuid => {
             this.pendingEntry = uuid;
@@ -69,6 +73,9 @@ class XrayApp extends OnlineApp {
         // ACTIVE is work retention, not HMI visibility. Serialize/coalesce SDK
         // calls so a delayed hide/inactive cannot overtake a new start/open.
         this.lifeQueue = this.lifeQueue.catch(() => {}).then(() => {
+            // AppStatus is not callable until the SDK initialization handshake
+            // and its proxy-ready notification have both completed.
+            if (!this.sdkInitialized || !this.statusReady) return;
             const active = !this.closing && (!this.seenForeground || this.visible || this.startRequested || !!this.control.child);
             const visible = !this.closing && this.visible;
             return Promise.resolve().then(() => {
@@ -82,7 +89,7 @@ class XrayApp extends OnlineApp {
         return this.lifeQueue;
     }
     requestStart() {
-        if (this.closing || this.failed || this.startRequested || this.control.child) return;
+        if (this.closing || this.failed || !this.sdkInitialized || !this.statusReady || this.startRequested || this.control.child) return;
         const serial = ++this.startSerial;
         this.startRequested = true;
         this.syncLifecycle().then(() => {
@@ -131,9 +138,10 @@ class XrayApp extends OnlineApp {
         return Promise.resolve(entry.init())
             .then(() => rhmi.mapEntryState(entry.getDescription().uuid, state))
             .then(() => entry.setAvailability('ENABLED'))
-            .then(() => this.syncLifecycle())
             .then(() => this.initialized())
             .then(() => {
+                this.sdkInitialized = true;
+                this.syncLifecycle().catch(() => this.fail());
                 this.uiReady = true;
                 this.render();
                 this.interval = setInterval(() => this.render(), 1000);

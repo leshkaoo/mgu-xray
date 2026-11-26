@@ -27,6 +27,7 @@ class OnlineApp extends EventEmitter {
     initialized() { return Promise.resolve(); } getLastExecutedEntryPointUuid() { return 'fixture'; }
     destroyBundles() { return Promise.resolve(); }
     start() {
+        this.emit('appStatusProxyReady');
         this.emit('initialized');
         setImmediate(() => this.requestStart());
         return Promise.resolve();

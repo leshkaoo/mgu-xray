@@ -24,8 +24,9 @@ try {
         assert.equal(packed.length, component.artifact.size); assert.equal(hash(packed), component.artifact.sha256);
         assert.deepEqual(component.mguHmi, ['ID7']);
     });
+    const engineVersion = catalog.components.find(c => c.id === 'izum-mgu-xray').version;
     const tool = path.join(temp, 'tool'), app = path.join(temp, 'app');
-    unpack(path.join(out, 'izum-mgu-xray@' + version + '.tgz'), tool);
+    unpack(path.join(out, 'izum-mgu-xray@' + engineVersion + '.tgz'), tool);
     const appMembers = unpack(path.join(out, 'izum_mgu_xray@' + version + '.tgz'), app);
     assert(!appMembers.some(name => /(?:node_modules|private\/|profile\.txt|sdk\/)/.test(name)));
     const component = JSON.parse(fs.readFileSync(path.join(tool, 'component.json')));

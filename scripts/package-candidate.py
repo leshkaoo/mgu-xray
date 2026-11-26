@@ -10,7 +10,8 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / 'dist/candidate'
-VERSION = '0.2.2'
+VERSION = '0.2.2'  # Engine unchanged by the UI-only hotfix.
+APP_VERSION = '0.2.3'
 STORE_COMMIT = '37702a880f1ed5fd346f4c944127fb276920be9c'
 
 
@@ -32,12 +33,12 @@ def main():
     sys.argv = ['package.py', '--out', str(OUT)]
     kit.main()
     app = ROOT / 'apps/izum_mgu_xray'
-    packed = OUT / ('izum_mgu_xray@' + VERSION + '.tgz')
+    packed = OUT / ('izum_mgu_xray@' + APP_VERSION + '.tgz')
     source = 'const link=require(process.argv[1]);console.log(JSON.stringify(link.packSource(process.argv[2],process.argv[3])));'
     subprocess.run(['node', '-e', source, str(upstream / 'tools/oap_link.js'), str(app), str(packed)], check=True)
     catalog = json.loads((OUT / 'catalog.json').read_text())
     catalog['components'].append({
-        'id': 'izum_mgu_xray', 'kind': 'app', 'version': VERSION,
+        'id': 'izum_mgu_xray', 'kind': 'app', 'version': APP_VERSION,
         'title': 'MGU-Xray (experimental)',
         'description': 'Experimental ID7 background proxy control. Existing uplink and secure local profile required; vehicle runtime unverified.',
         'mguHmi': ['ID7'], 'uninstallable': True, 'build': 'unit',

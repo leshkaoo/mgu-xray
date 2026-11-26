@@ -8,7 +8,7 @@ import uuid
 import zlib
 
 ROOT = Path(__file__).resolve().parents[1]
-ID, VERSION = 'izum_mgu_xray', '0.2.2'
+ID, VERSION = 'izum_mgu_xray', '0.2.3'
 APP = ROOT / 'apps' / ID
 
 
