@@ -17,7 +17,7 @@ Object.keys(ui.containers['1'].components).forEach(id => {
     const component = new EventEmitter(); component.getId = () => Number(id); component.setValue = () => Promise.resolve();
     components[ui.containers['1'].components[id].name] = component;
 });
-rhmi.getByName = name => name === 'XR_Main' ? {} : components[name];
+rhmi.getByName = name => name === 'XR_Main' ? { updateResources: () => Promise.resolve() } : components[name];
 rhmi.mapEntryState = () => Promise.resolve(); rhmi.openEntryState = () => Promise.resolve();
 class OnlineApp extends EventEmitter {
     constructor() { super(); instance = this; this.rhmiApplication = rhmi; this.appDescription = { application: { entryPoints: [{ uuid: 'fixture' }] } }; }
@@ -64,8 +64,8 @@ process.stdin.on('end', () => {
     fs.writeFileSync(path.join(temp, 'private/profile.txt'), bytes, { mode: 0o600 }); bytes.fill(0);
     const file = path.join(root, 'apps/izum_mgu_xray/src/app.js');
     vm.runInNewContext(fs.readFileSync(file, 'utf8'), {
-        __dirname: path.join(temp, 'javascript'), process, setInterval, clearInterval,
-        require: name => name === 'oap-sdk/src/core/OnlineApp.js' ? OnlineApp : name === './control.js' ? { Control: ObservedControl } : name === './deployment.js' ? {} : require(name)
+        __dirname: path.join(temp, 'javascript'), process, setInterval, clearInterval, setTimeout, clearTimeout,
+        require: name => name === 'oap-sdk/src/core/OnlineApp.js' ? OnlineApp : name === './control.js' ? { Control: ObservedControl } : name === './deployment.js' ? {} : name === './diagnostics.js' ? require('../apps/izum_mgu_xray/src/diagnostics.js') : require(name)
     });
 });
 process.on('exit', () => fs.rmSync(temp, { recursive: true, force: true }));

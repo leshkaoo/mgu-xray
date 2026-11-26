@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "id": "izum_mgu_xray",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "mguHmi": [
     "ID7"
   ],
@@ -10,7 +10,8 @@
   "modules": [
     "src/app.js",
     "src/control.js",
-    "src/deployment.js"
+    "src/deployment.js",
+    "src/diagnostics.js"
   ],
   "sdk": [
     "oap-sdk/src/core/OnlineApp.js"

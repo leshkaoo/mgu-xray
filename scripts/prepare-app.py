@@ -8,7 +8,7 @@ import uuid
 import zlib
 
 ROOT = Path(__file__).resolve().parents[1]
-ID, VERSION = 'izum_mgu_xray', '0.2.3'
+ID, VERSION = 'izum_mgu_xray', '0.2.4'
 APP = ROOT / 'apps' / ID
 
 
@@ -30,7 +30,7 @@ def main():
     (APP / 'src/deployment.js').write_text("'use strict';\nmodule.exports = " + json.dumps(deployment, indent=2) + ';\n')
     write('mgu-app.json', {
         'schema': 1, 'id': ID, 'version': VERSION, 'mguHmi': ['ID7'], 'internet': True,
-        'tree': 'package', 'modules': ['src/app.js', 'src/control.js', 'src/deployment.js'],
+        'tree': 'package', 'modules': ['src/app.js', 'src/control.js', 'src/deployment.js', 'src/diagnostics.js'],
         'sdk': ['oap-sdk/src/core/OnlineApp.js'],
     })
     write('package/package.json', {
@@ -47,7 +47,7 @@ def main():
         'dependencies': {'oap-sdk': '24.10.2'}, 'engines': {'node': '>=8.9.4'},
     })
     write('package/npm-shrinkwrap.json', {'name': ID, 'version': VERSION, 'lockfileVersion': 1, 'requires': True, 'dependencies': {}})
-    write('package/config/base.json', {})
+    write('package/config/base.json', {'rhmiLoadingEnabled': True, 'entryPointLoadingEnabled': True})
     access = []
     for domain, interface in [
         ('de.bmw.infotainment.telematic.oap.oapcontroller', 'oapcontroller/OAPController'),

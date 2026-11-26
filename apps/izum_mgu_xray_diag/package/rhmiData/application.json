@@ -1,0 +1,53 @@
+{
+  "schemaVersion": "1.3.0",
+  "application": {
+    "uuid": "5a547c3e-cd2f-58e0-b585-22f8b1ed696c",
+    "type": "OnlineApp",
+    "name": "izum_mgu_xray_diag",
+    "vendor": "MGU-Xray contributors",
+    "version": "0.0.1",
+    "defaultLanguage": "en_GB",
+    "uiDescriptions": [
+      {
+        "applicationFilePath": "./uiDescriptions/ID7/application.xml",
+        "uiDescriptionFilePath": "./uiDescriptions/ID7/uiDescription.json",
+        "hmi": [
+          "ID7"
+        ]
+      }
+    ],
+    "stringBundleUuid": "e714259d-5f55-5c69-97d0-ca14b10c830a",
+    "resourceBundleUuid": "ace907ac-0da7-58c2-b33a-2b9121dc0dbe",
+    "variantGroups": [
+      {
+        "stringsPath": "./variantGroups/Common/texts",
+        "resourcesPath": "./variantGroups/Common/images",
+        "hmi": [
+          "ID7"
+        ],
+        "brands": [
+          "BMW"
+        ]
+      }
+    ],
+    "entryPoints": [
+      {
+        "name": "izum_mgu_xray",
+        "uuid": "f824ee17-06b5-5912-9078-3f9ef414e69f",
+        "textId": "SID_XR_TITLE",
+        "icon": "mgu_xray.png",
+        "insertionStateId": 20974,
+        "insertionFocusId": 2,
+        "insertionMode": "INSERT_BELOW",
+        "insertionOrder": 0,
+        "insertionPriority": 0,
+        "previewType": "NONE",
+        "bookmarkable": true,
+        "private": null,
+        "appearance": "DEFAULT",
+        "isGroupHeader": false,
+        "insertionGroup": 0
+      }
+    ]
+  }
+}

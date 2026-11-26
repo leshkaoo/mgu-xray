@@ -10,8 +10,8 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / 'dist/candidate'
-VERSION = '0.2.2'  # Engine unchanged by the UI-only hotfix.
-APP_VERSION = '0.2.3'
+VERSION = '0.2.4'  # Local-only synchronized package metadata; binaries unchanged.
+APP_VERSION = '0.2.4'
 STORE_COMMIT = '37702a880f1ed5fd346f4c944127fb276920be9c'
 
 

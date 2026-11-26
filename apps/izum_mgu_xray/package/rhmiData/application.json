@@ -5,7 +5,7 @@
     "type": "OnlineApp",
     "name": "izum_mgu_xray",
     "vendor": "MGU-Xray contributors",
-    "version": "0.2.3",
+    "version": "0.2.4",
     "defaultLanguage": "en_GB",
     "uiDescriptions": [
       {

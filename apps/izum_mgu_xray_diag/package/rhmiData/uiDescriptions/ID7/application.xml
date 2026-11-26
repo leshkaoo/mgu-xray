@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<application><container id="501" type="state" widget="LT_State_Wide"><layoutGroup id="510" name="Titlebar"><component id="10" type="title"><property id="2" value="1"/></component></layoutGroup><layoutGroup id="520" name="List"><property id="3" value="1"/><component id="22" type="label" widget="LT_Label_1Row"><property id="2" value="1"/><property id="3" value="0"/></component></layoutGroup></container></application>

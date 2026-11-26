@@ -97,7 +97,7 @@ async function main() {
         const c = description.containers['1'].components[id]; const emitter = new EventEmitter();
         emitter.getId = () => Number(id); emitter.setValue = (row, cell, value) => { writes++; values[c.name] = value; return Promise.resolve(); }; components[c.name] = emitter;
     });
-    const rhmi = new EventEmitter(); rhmi.getByName = name => name === 'XR_Main' ? {} : components[name];
+    const rhmi = new EventEmitter(); rhmi.getByName = name => name === 'XR_Main' ? { updateResources: () => Promise.resolve() } : components[name];
     rhmi.mapEntryState = () => Promise.resolve(); rhmi.openEntryState = () => Promise.resolve();
     let instance, controlOptions, handshake = false, proxyReady = false;
     class OnlineApp extends EventEmitter {
@@ -116,8 +116,8 @@ async function main() {
     const entry = path.join(root, 'apps/izum_mgu_xray/src/app.js');
     vm.runInNewContext(fs.readFileSync(entry, 'utf8'), {
         __dirname: path.join(temp, 'source/javascript'), process: { on: () => {}, exit: () => {} },
-        setInterval, clearInterval, Date,
-        require: name => name === 'oap-sdk/src/core/OnlineApp.js' ? { OnlineApp } : name === './control.js' ? { Control: FakeControl } : name === './deployment.js' ? {} : require(name)
+        setInterval, clearInterval, setTimeout, clearTimeout, Date,
+        require: name => name === 'oap-sdk/src/core/OnlineApp.js' ? { OnlineApp } : name === './control.js' ? { Control: FakeControl } : name === './deployment.js' ? {} : name === './diagnostics.js' ? require('../apps/izum_mgu_xray/src/diagnostics.js') : require(name)
     });
     await new Promise(resolve => setImmediate(resolve));
     check('UI initialization does not wait for AppStatus proxy', () => { assert(instance.uiReady); assert(!instance.failed); });
@@ -130,7 +130,8 @@ async function main() {
     components.XR_start.emit('action'); rhmi.emit('userEvent', { eventType: 'ACTION', sourceId: components.XR_start.getId() });
     await new Promise(resolve => setImmediate(resolve));
     check('native buttons and duplicate action dedupe', () => assert.equal(instance.control.starts, 1));
-    check('RU/EN language switch', () => { components.XR_language.emit('action'); assert.equal(values.XR_start, 'Start proxy'); });
+    components.XR_language.emit('action'); await new Promise(resolve => setImmediate(resolve));
+    check('RU/EN language switch', () => assert.equal(values.XR_start, 'Start proxy'));
     instance.emit('changeVisibility', { visible: false }); await instance.lifeQueue;
     check('hide retains running proxy, ACTIVE without HMI visibility', () => { assert.equal(instance.control.stops, 0); assert(active); assert(!hmiVisible); });
     check('hidden rendering sends no RHMI writes', () => { const before = writes; instance.render(); assert.equal(writes, before); });

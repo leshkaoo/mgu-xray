@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "id": "izum_mgu_xray_diag",
+  "version": "0.0.1",
+  "mguHmi": [
+    "ID7"
+  ],
+  "internet": true,
+  "tree": "package",
+  "modules": [
+    "src/app.js",
+    "src/diagnostics.js"
+  ],
+  "sdk": [
+    "oap-sdk/src/core/OnlineApp.js"
+  ]
+}

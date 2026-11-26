@@ -1,6 +1,6 @@
 {
   "name": "izum_mgu_xray",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "private": true,
   "mguHmi": [
     "ID7"
