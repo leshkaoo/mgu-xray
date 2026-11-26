@@ -10,7 +10,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / 'dist/candidate'
-VERSION = '0.2.1'
+VERSION = '0.2.2'
 STORE_COMMIT = '37702a880f1ed5fd346f4c944127fb276920be9c'
 
 
@@ -27,6 +27,8 @@ def main():
     kit = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(kit)
     kit.VERSION = VERSION
+    kit.TITLE = 'MGU-Xray Engine (experimental)'
+    kit.DESCRIPTION = 'Experimental linux/amd64 engine and supervisor. No service/autostart. Vehicle runtime unverified.'
     sys.argv = ['package.py', '--out', str(OUT)]
     kit.main()
     app = ROOT / 'apps/izum_mgu_xray'
@@ -36,8 +38,8 @@ def main():
     catalog = json.loads((OUT / 'catalog.json').read_text())
     catalog['components'].append({
         'id': 'izum_mgu_xray', 'kind': 'app', 'version': VERSION,
-        'title': 'MGU-Xray · experimental candidate',
-        'description': 'Background-capable native control. Not BMW-tested; not an approved vehicle release.',
+        'title': 'MGU-Xray (experimental)',
+        'description': 'Experimental ID7 background proxy control. Existing uplink and secure local profile required; vehicle runtime unverified.',
         'mguHmi': ['ID7'], 'uninstallable': True, 'build': 'unit',
         'requires': {'mgu-deploy': '0.7.0', 'izum-mgu-xray': VERSION},
         'artifact': {'name': packed.name, 'size': packed.stat().st_size,

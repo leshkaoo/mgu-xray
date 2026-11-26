@@ -8,7 +8,7 @@ import uuid
 import zlib
 
 ROOT = Path(__file__).resolve().parents[1]
-ID, VERSION = 'izum_mgu_xray', '0.2.1'
+ID, VERSION = 'izum_mgu_xray', '0.2.2'
 APP = ROOT / 'apps' / ID
 
 
@@ -38,16 +38,41 @@ def main():
         'description': 'Experimental background-capable REALITY proxy control. Not target-validated.',
         'main': 'javascript/runner.js', 'license': 'MIT',
         'oapAppSettings': {
-            'maxDiskUsage': 26214400, 'cpuLimit': 20, 'memoryThresholdKB': 98304,
+            'maxDiskUsage': 67108864, 'cpuLimit': 20, 'memoryThresholdKB': 98304,
             'priority': 'PRIO_MEDIUM', 'visibility': 'FOREGROUND', 'latencyClass': 'FOREGROUND',
             'loggingId': 'MXRY', 'userLoginRequired': False, 'backgroundPriority': 150,
             'someipManifest': 'manifest.json',
         },
-        'files': ['config', 'rhmiData', 'package.json', 'permissions.json', 'manifest.json', 'javascript', 'LICENSE'],
+        'files': ['config', 'rhmiData', 'package.json', 'npm-shrinkwrap.json', 'permissions.json', 'manifest.json', 'javascript', 'LICENSE'],
         'dependencies': {'oap-sdk': '24.10.2'}, 'engines': {'node': '>=8.9.4'},
     })
+    write('package/npm-shrinkwrap.json', {'name': ID, 'version': VERSION, 'lockfileVersion': 1, 'requires': True, 'dependencies': {}})
     write('package/config/base.json', {})
-    write('package/permissions.json', {})
+    access = []
+    for domain, interface in [
+        ('de.bmw.infotainment.telematic.oap.oapcontroller', 'oapcontroller/OAPController'),
+        ('de.bmw.infotainment.telematic.oap.appStatus_${APPNAME}', 'oap/appstatus/AppStatus'),
+        ('de.bmw.infotainment.telematic.oap.appstart', 'oap/appstart/AppStart'),
+        ('de.bmw.infotainment.telematic.oap.privateEntryPoint_${APPNAME}', 'oap/privateentrypoint/PrivateEntryPoint'),
+    ]:
+        access.append({
+            '_typeName': 'joynr.infrastructure.DacTypes.MasterAccessControlEntry', 'uid': '${APPNAME}',
+            'domain': domain, 'interfaceName': 'de/bmw/infotainment/telematic/' + interface,
+            'defaultRequiredTrustLevel': 'HIGH', 'possibleRequiredTrustLevels': [],
+            'defaultRequiredControlEntryChangeTrustLevel': 'HIGH', 'possibleRequiredControlEntryChangeTrustLevels': [],
+            'operation': '*', 'defaultConsumerPermission': 'YES', 'possibleConsumerPermissions': [],
+        })
+    registration = {
+        '_typeName': 'joynr.infrastructure.DacTypes.MasterRegistrationControlEntry', 'uid': '${APPNAME}',
+        'domain': 'de.bmw.infotainment.telematic.oap.heartbeat_${APPNAME}',
+        'interfaceName': 'de/bmw/infotainment/telematic/oap/heartbeat/HeartbeatMonitor',
+        'defaultRequiredTrustLevel': 'HIGH', 'possibleRequiredTrustLevels': [],
+        'defaultRequiredControlEntryChangeTrustLevel': 'HIGH', 'possibleRequiredControlEntryChangeTrustLevels': [],
+        'defaultProviderPermission': 'YES', 'possibleProviderPermissions': [],
+    }
+    write('package/permissions.json', {'masterAccessTable': access, 'masterRegistrationTable': [registration],
+                                     'mediatorAccessTable': [], 'ownerAccessTable': [],
+                                     'mediatorRegistrationTable': [], 'ownerRegistrationTable': [], 'domainRoleTable': []})
     # Only UI/app lifecycle proxies. No vehicle, CAN, telephony or session data.
     proxies = [
         'de.bmw.infotainment.telematic.oapcontroller.OAPController',
@@ -60,7 +85,18 @@ def main():
         'de.bmw.infotainment.hmi.resourcemanagement.StringBundle',
         'de.bmw.infotainment.certification.Certification',
     ]
-    write('package/manifest.json', {'proxies': {name: '*' for name in proxies}})
+    manifest = {'proxies': {name: '*' for name in proxies},
+                'services': {'de.bmw.infotainment.telematic.oap.AppStatus': {'instances': ['${userId}']}}}
+    lifecycle = {
+        'PrivateEntryPoint': ['registerEntryPoint', 'unregisterEntryPoint', 'setSelected', 'setAvailability'],
+        'AppBookmarks': ['registerBookmark'], 'WakeUpOnDemand': ['registerParticipant', 'unregisterParticipant'],
+        'WodControl': ['offerService', 'stopOfferingService'],
+    }
+    for name, methods in lifecycle.items():
+        manifest['proxies']['de.bmw.infotainment.telematic.oap.' + name] = {'instances': ['${userId}'], 'methods': methods}
+    manifest['proxies']['de.bmw.infotainment.telematic.provisioning.Provisioning'] = {
+        'instances': '1', 'broadcasts': ['provisioningDataJSON'], 'methods': ['getValueJSON', 'setFilterForProvisioningData']}
+    write('package/manifest.json', manifest)
     uid = lambda name: str(uuid.uuid5(uuid.NAMESPACE_URL, 'https://github.com/leshkaoo/mgu-xray/' + name))
     write('package/rhmiData/application.json', {
         'schemaVersion': '1.3.0', 'application': {

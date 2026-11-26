@@ -35,7 +35,7 @@ class OnlineApp extends EventEmitter {
 class ObservedControl extends Control {
     constructor(options) {
         super(Object.assign({}, options, {
-            supervisor, engine: argument('-engine'), engineSHA256: argument('-engine-sha256'),
+            root: temp, supervisor, engine: argument('-engine'), engineSHA256: argument('-engine-sha256'),
             supervisorSHA256: crypto.createHash('sha256').update(fs.readFileSync(supervisor)).digest('hex'),
             socksPort: Number(argument('-socks-port')), httpPort: Number(argument('-http-port'))
         }));

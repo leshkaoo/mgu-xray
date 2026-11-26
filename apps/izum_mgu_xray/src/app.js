@@ -13,7 +13,7 @@ const WORDS = {
         config: 'Нужен локальный профиль 0600 и проверенные бинарники',
         session: 'Работа движка: ', retries: 'Перезапусков: ',
         metrics: 'Задержка и трафик: не измеряются',
-        candidate: 'Кандидат 0.2.1 · на BMW не проверен', mode: 'Работа в фоне · без автозапуска'
+        candidate: 'Кандидат 0.2.2 · на BMW не проверен', mode: 'Работа в фоне · без автозапуска'
     },
     en: {
         off: 'Disconnected', starting: 'Starting…', running: 'Engine running · uplink unverified', retry: 'Restarting engine', stopping: 'Stopping…', error: 'Could not start',
@@ -23,7 +23,7 @@ const WORDS = {
         config: 'Needs local 0600 profile and verified binaries',
         session: 'Engine runtime: ', retries: 'Restarts: ',
         metrics: 'Latency and traffic: not measured',
-        candidate: 'Candidate 0.2.1 · not tested on BMW', mode: 'Background operation · no autostart'
+        candidate: 'Candidate 0.2.2 · not tested on BMW', mode: 'Background operation · no autostart'
     }
 };
 
@@ -44,7 +44,9 @@ class XrayApp extends OnlineApp {
         this.failed = false;
         this.lifeQueue = Promise.resolve();
         this.lifeSent = { active: null, visible: null };
-        this.control = new Control(Object.assign({}, deployment, { root: path.resolve(__dirname, '..') }));
+        // Installed bundle: <OAP home>/source/javascript/app.js. Only data/
+        // is carried across Store reinstall/update/rollback, not source/.
+        this.control = new Control(Object.assign({}, deployment, { root: path.resolve(__dirname, '..', '..', 'data') }));
         this.control.on('change', () => { this.render(); this.syncLifecycle().catch(() => this.fail()); });
         this.on('appStatusProxyReady', () => { this.failed = false; this.syncLifecycle(true).catch(() => this.fail()); });
         this.on('initialized', () => Promise.resolve().then(() => this.setup()).catch(() => this.fail()));

@@ -8,6 +8,7 @@ const crypto = require('crypto');
 const EventEmitter = require('events');
 const PassThrough = require('stream').PassThrough;
 const vm = require('vm');
+const cp = require('child_process');
 const root = path.resolve(__dirname, '..');
 const api = require('../apps/izum_mgu_xray/src/control.js');
 const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'mgu-native-test-'));
@@ -23,13 +24,40 @@ async function main() {
     check('world-readable profile refused', () => { fs.chmodSync(profilePath, 0o644); assert.throws(() => api.privateProfile(temp)); fs.chmodSync(profilePath, 0o600); });
     check('oversize profile refused', () => { fs.writeFileSync(profilePath, Buffer.alloc(65537)); assert.throws(() => api.privateProfile(temp)); fs.writeFileSync(profilePath, secret); });
     check('symlink profile refused', () => { fs.renameSync(profilePath, profilePath + '.real'); fs.symlinkSync(profilePath + '.real', profilePath); assert.throws(() => api.privateProfile(temp)); fs.unlinkSync(profilePath); fs.renameSync(profilePath + '.real', profilePath); });
+    check('FIFO profile cannot block UI before regular-file validation', () => {
+        fs.renameSync(profilePath, profilePath + '.real'); cp.execFileSync('mkfifo', [profilePath]); fs.chmodSync(profilePath, 0o600);
+        const result = cp.spawnSync(process.execPath, ['-e', 'try { require(process.argv[1]).privateProfile(process.argv[2]); process.exit(2); } catch (_) { process.exit(0); }', path.join(root, 'apps/izum_mgu_xray/src/control.js'), temp], { timeout: 1500 });
+        assert(!result.error); assert.equal(result.status, 0);
+        fs.unlinkSync(profilePath); fs.renameSync(profilePath + '.real', profilePath);
+    });
     check('public private-directory refused', () => { fs.chmodSync(dir, 0o755); assert.throws(() => api.privateProfile(temp)); fs.chmodSync(dir, 0o700); });
+    check('shared writable data root refused', () => { fs.chmodSync(temp, 0o777); assert.throws(() => api.privateProfile(temp)); fs.chmodSync(temp, 0o700); });
+    const deadPID = Number(cp.execFileSync(process.execPath, ['-e', 'process.stdout.write(String(process.pid))'], { encoding: 'utf8' }));
+    const stale = path.join(temp, '.mgu-xray-run-' + deadPID + '-stale');
+    fs.mkdirSync(stale, { mode: 0o700 }); fs.mkdirSync(path.join(stale, 'mgu-xray-fixture'), { mode: 0o700 });
+    fs.writeFileSync(path.join(stale, 'mgu-xray-fixture/xray'), 'stale synthetic engine');
+    fs.writeFileSync(path.join(stale, 'owner.json'), JSON.stringify({ pid: deadPID, bootId: null, startTime: null }), { mode: 0o600 });
+    const live = path.join(temp, '.mgu-xray-run-' + process.pid + '-live');
+    fs.mkdirSync(live, { mode: 0o700 }); fs.writeFileSync(path.join(live, 'owner.json'), JSON.stringify(api.runtimeOwner()), { mode: 0o600 });
+    api.sweepStaleRuntime(temp);
+    check('dead-owner runtime reclaimed without touching live owner', () => { assert(!fs.existsSync(stale)); assert(fs.existsSync(live)); });
+    check('previous Linux boot proves stale even with reused live PID', () => {
+        assert(api.staleOwner({ pid: process.pid, bootId: '00000000-0000-0000-0000-000000000001', startTime: '1' }, '00000000-0000-0000-0000-000000000002'));
+        assert(!api.staleOwner({ pid: process.pid, bootId: 42 }, '00000000-0000-0000-0000-000000000002'));
+    });
+    check('FIFO runtime owner marker cannot block cleanup', () => {
+        const fifoDir = path.join(temp, '.mgu-xray-run-' + deadPID + '-fifo'); fs.mkdirSync(fifoDir, { mode: 0o700 }); cp.execFileSync('mkfifo', [path.join(fifoDir, 'owner.json')]);
+        const result = cp.spawnSync(process.execPath, ['-e', 'require(process.argv[1]).sweepStaleRuntime(process.argv[2]);', path.join(root, 'apps/izum_mgu_xray/src/control.js'), temp], { timeout: 1500 });
+        assert(!result.error); assert.equal(result.status, 0); assert(fs.existsSync(fifoDir));
+    });
     let child, argv, spawnOptions, received = '', starts = 0, kills = 0;
     const binary = path.join(temp, 'supervisor'); fs.writeFileSync(binary, 'synthetic executable fixture');
     const options = {
         root: temp, supervisor: binary, engine: '/fixture/xray', supervisorSHA256: sha(fs.readFileSync(binary)), engineSHA256: 'a'.repeat(64),
         spawn: (file, args, opts) => {
             starts++; argv = args; spawnOptions = opts;
+            fs.mkdirSync(path.join(opts.env.TMPDIR, 'mgu-xray-fixture'));
+            fs.writeFileSync(path.join(opts.env.TMPDIR, 'mgu-xray-fixture/xray'), 'synthetic frozen engine');
             child = new EventEmitter(); child.stdin = new PassThrough(); child.stdout = new PassThrough();
             child.stdin.on('data', data => { received += data.toString(); });
             child.kill = signal => { kills++; assert.equal(signal, 'SIGTERM'); setImmediate(() => child.emit('close', 0)); };
@@ -52,6 +80,7 @@ async function main() {
     const stopping = control.stop(); const again = control.stop();
     check('stop is idempotent; no restart while stopping', () => { assert.strictEqual(stopping, again); control.start(); assert.equal(starts, 1); assert.equal(kills, 1); });
     await stopping;
+    check('owned runtime clone removed on process close', () => assert(!fs.existsSync(spawnOptions.env.TMPDIR)));
     check('close clears owned process', () => { assert.equal(control.state, 'off'); assert.equal(control.child, null); });
     await control.shutdown(); control.start();
     check('shutdown forbids future launch', () => assert.equal(starts, 1));
@@ -70,7 +99,7 @@ async function main() {
     });
     const rhmi = new EventEmitter(); rhmi.getByName = name => name === 'XR_Main' ? {} : components[name];
     rhmi.mapEntryState = () => Promise.resolve(); rhmi.openEntryState = () => Promise.resolve();
-    let instance;
+    let instance, controlOptions;
     class OnlineApp extends EventEmitter {
         constructor() { super(); instance = this; this.rhmiApplication = rhmi; this.appDescription = { application: { entryPoints: [{ uuid: 'fixture' }] } }; }
         getEntryPoints() { return [{ getDescription: () => ({ uuid: 'fixture' }), init: () => Promise.resolve(), setAvailability: () => Promise.resolve() }]; }
@@ -80,17 +109,18 @@ async function main() {
         start() { this.emit('initialized'); return Promise.resolve(); }
     }
     class FakeControl extends EventEmitter {
-        constructor() { super(); this.starts = this.stops = 0; this.state = "off"; this.child = null; }
+        constructor(options) { super(); controlOptions = options; this.starts = this.stops = 0; this.state = "off"; this.child = null; }
         snapshot() { return { state: this.state, seconds: 0, retries: 0 }; }
         start() { this.starts++; this.state = "running"; this.child = {}; this.emit("change"); } stop() { this.stops++; this.state = "off"; this.child = null; this.emit("change"); return Promise.resolve(); } shutdown() { return this.stop(); }
     }
     const entry = path.join(root, 'apps/izum_mgu_xray/src/app.js');
     vm.runInNewContext(fs.readFileSync(entry, 'utf8'), {
-        __dirname: path.dirname(entry), process: { on: () => {}, exit: () => {} },
+        __dirname: path.join(temp, 'source/javascript'), process: { on: () => {}, exit: () => {} },
         setInterval, clearInterval, Date,
         require: name => name === 'oap-sdk/src/core/OnlineApp.js' ? OnlineApp : name === './control.js' ? { Control: FakeControl } : name === './deployment.js' ? {} : require(name)
     });
     await new Promise(resolve => setImmediate(resolve));
+    check('profile/runtime root uses persistent OAP home data not replaceable source', () => assert.equal(controlOptions.root, path.join(temp, 'data')));
     check('RHMI components mapped; Russian default', () => { assert.equal(instance.uiReady, true); assert.equal(values.XR_start, 'Запустить прокси'); });
     components.XR_start.emit('action'); rhmi.emit('userEvent', { eventType: 'ACTION', sourceId: components.XR_start.getId() });
     await new Promise(resolve => setImmediate(resolve));

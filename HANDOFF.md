@@ -1,9 +1,9 @@
 # Local milestone handoff — 2026-11-26
 
-**0.2.1 candidate update:** see `packaging/CANDIDATE.md` and
+**0.2.2 candidate update:** see `packaging/CANDIDATE.md` and
 `packaging/CANDIDATE_TEST_REPORT.md`. A separate native app source package and
 matching engine tool kit can now be built. Public source repository:
-https://github.com/leshkaoo/mgu-xray . This is not an active Store source.
+https://github.com/leshkaoo/mgu-xray . An experimental Store Releases catalog is being prepared; vehicle installation is unverified.
 The 0.1.0 hashes and status below describe the historical milestone only.
 
 Status: working local headless prototype; **not beta or vehicle-ready**.

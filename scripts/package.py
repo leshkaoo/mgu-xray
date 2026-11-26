@@ -10,6 +10,8 @@ import struct
 import tarfile
 
 ID, VERSION = 'izum-mgu-xray', '0.1.0'
+TITLE = 'MGU-Xray engineering kit (not beta)'
+DESCRIPTION = 'Local engineering artifact. No service, UI, autostart or vehicle validation. Not approved for vehicle installation or redistribution.'
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -47,7 +49,7 @@ def main():
     payload = {'xray': (engine, 0o755), 'mgu-xray': (supervisor, 0o755)}
     for name in ['README.engineering.md']:
         payload[name] = ((ROOT / 'packaging' / name).read_bytes(), 0o644)
-    for name in ['CANDIDATE.md', 'CANDIDATE_TEST_REPORT.md']:
+    for name in ['CANDIDATE.md', 'CANDIDATE_TEST_REPORT.md', 'INSTALL-RU.md', 'SOURCES.md']:
         path = ROOT / 'packaging' / name
         if path.is_file():
             payload[name] = (path.read_bytes(), 0o644)
@@ -74,8 +76,8 @@ def main():
     sums = ''.join(sha(data) + '  ' + name + '\n' for name, (data, _) in sorted(payload.items()))
     payload['SHA256SUMS'] = (sums.encode(), 0o644)
     component = {'id': ID, 'kind': 'tool', 'version': VERSION,
-                 'title': 'MGU-Xray engineering kit (not beta)',
-                 'description': 'Local engineering artifact. No service, UI, autostart or vehicle validation. Not approved for vehicle installation or redistribution.',
+                 'title': TITLE,
+                 'description': DESCRIPTION,
                  'uninstallable': True, 'mguHmi': ['ID7'], 'requires': {'mgu-deploy': '0.7.0'},
                  'files': [{'path': name, 'mode': format(mode, '04o'), 'sha256': sha(data)} for name, (data, mode) in sorted(payload.items())],
                  'units': [], 'enable': [], 'restart': [], 'recmgr': [], 'dropins': []}

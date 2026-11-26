@@ -1,6 +1,6 @@
 {
   "name": "izum_mgu_xray",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "private": true,
   "mguHmi": [
     "ID7"
@@ -10,7 +10,7 @@
   "main": "javascript/runner.js",
   "license": "MIT",
   "oapAppSettings": {
-    "maxDiskUsage": 26214400,
+    "maxDiskUsage": 67108864,
     "cpuLimit": 20,
     "memoryThresholdKB": 98304,
     "priority": "PRIO_MEDIUM",
@@ -25,6 +25,7 @@
     "config",
     "rhmiData",
     "package.json",
+    "npm-shrinkwrap.json",
     "permissions.json",
     "manifest.json",
     "javascript",

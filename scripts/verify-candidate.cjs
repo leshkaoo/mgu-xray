@@ -70,6 +70,19 @@ try {
     assert(linkedNames.includes('javascript/runner.js')); assert(linkedNames.includes('javascript/app.js'));
     const pkg = JSON.parse(fs.readFileSync(path.join(linked, 'package.json')));
     assert.equal(pkg.mguInternet, true);
+    const acl = JSON.parse(fs.readFileSync(path.join(linked, 'permissions.json')));
+    assert(Array.isArray(acl.masterAccessTable) && acl.masterAccessTable.length >= 4);
+    assert(Array.isArray(acl.masterRegistrationTable) && acl.masterRegistrationTable.length >= 1);
+    assert(acl.masterAccessTable.some(item => item.interfaceName.endsWith('/appstatus/AppStatus')));
+    assert(acl.masterRegistrationTable.some(item => item.interfaceName.endsWith('/heartbeat/HeartbeatMonitor')));
+    const manifest = JSON.parse(fs.readFileSync(path.join(linked, 'manifest.json')));
+    assert.deepEqual(manifest.services['de.bmw.infotainment.telematic.oap.AppStatus'].instances, ['${userId}']);
+    ['PrivateEntryPoint', 'AppBookmarks', 'WakeUpOnDemand', 'WodControl'].forEach(name => assert(manifest.proxies['de.bmw.infotainment.telematic.oap.' + name]));
+    assert(!Object.keys(manifest.proxies).some(name => name.includes('.vehicle.')));
+    const shrinkwrap = JSON.parse(fs.readFileSync(path.join(linked, 'npm-shrinkwrap.json')));
+    assert.equal(shrinkwrap.name, pkg.name); assert.equal(shrinkwrap.version, version); assert.equal(shrinkwrap.lockfileVersion, 1);
+    assert(pkg.oapAppSettings.maxDiskUsage > fs.statSync(path.join(tool, 'files/xray')).size + 16 * 1024 * 1024);
     console.log('PASS: catalog sizes/hashes, no SDK/secrets in source package, no service/hooks, upstream validateTool + tamper rejection, UI/engine digest match, actual upstream source link/pack with synthetic donor, deterministic linked bytes.');
+    console.log('PASS: linked OAP lifecycle ACL tables, AppStatus service, core proxies, shrinkwrap and disk budget exceeding actual engine + margin.');
     console.log('NOT TESTED: real BMW donor/SDK runtime, installed updater, target ABI, install/rollback, Linux execution.');
 } finally { fs.rmSync(temp, { recursive: true, force: true }); }

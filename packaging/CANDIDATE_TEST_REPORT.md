@@ -1,4 +1,21 @@
-# Candidate 0.2.1 — фоновый режим, 2026-11-26
+# Experimental 0.2.2 — подготовка активного канала, 2026-11-26
+
+По явному запросу владельца публикуется экспериментальный установочный канал,
+не beta. На автомобиль не подключались, target install/rollback не выполнялись.
+
+- Независимое повторное Codex-ревью нашло шесть concrete P1 в baseline0.2.1, плюс stale-runtime quota issue; исправления перепроверены. Reviewer также самостоятельно проверил ACL/AppStatus/shrinkwrap/quota в конечном synthetic-linked OAP. Итог: нет найденных concrete P0/P1 для experimental publication. Полный scope/ограничения — research/RELEASE_REVIEW_0.2.2.md.
+- `node scripts/test-native.cjs`: PASS, **33 проверки**. Дополнительно: persistent data root, FIFO profile/marker rejection без зависания, shared-writable data rejection, owned runtime cleanup, dead-owner sweep без live-owner удаления, model Linux boot mismatch/reused-PID proof. Последний — unit-модель, не исполнение Linux.
+- `go test -race ./...`, `go vet ./...`: PASS после LockOSThread изменения. Supervisor darwin/arm64 + linux/amd64 заново собран; Linux binary не исполнялся.
+- `python3 scripts/e2e-native.py`: PASS с настоящими app.js+Control+Go+Xray после UI hide, SDK transport mocked; SOCKS5/HTTP, upstream loss/recovery, wrong UUID, UI SIGKILL cleanup. `python3 scripts/e2e-local.py`: PASS, включая SIGTERM и освобождение listeners.
+- Конечный source-linked OAP дополнительно проверяется на реальные ACL tables/AppStatus/lifecycle proxies/shrinkwrap и quota > actual frozen engine +16MiB. Предыдущий synthetic linker success без этих проверок был недостаточен; это исправлено.
+- Профиль теперь сохраняется в `<OAP-home>/data/private/profile.txt`; runtime под data с PID/boot/starttime marker и bounded stale sweep. Поведение Store data preservation изучено по pinned reinstallApp, но на BMW не исполнялось.
+
+Открыто до beta: настоящий SDK/MainApp, ABI/uplink/UID/noexec, hard resource caps,
+Linux forced-death tests, secure профиль на конкретном MGU, install/update/remove/
+rollback/recovery и реальный per-app proxy. Публичное скачивание и каталог не
+закрывают эти пункты. Existing mgu-uplink и безопасный профиль — условия инструкции.
+
+## История: candidate 0.2.1 — фоновый режим
 
 Среда: Mac M4 arm64. Машина недоступна; разрешение/endpoint для подключения не предоставлены. Это не отчёт об исполнении на MGU.
 

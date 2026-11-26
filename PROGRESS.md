@@ -59,3 +59,15 @@ existing source-history commits were scanned for credential/private-key,
 personal path/email and owner-endpoint patterns before changing visibility.
 The repository is now public; draft prereleases remain drafts. This does not
 activate a Store catalog or validate vehicle installation.
+
+## Experimental channel 0.2.2
+
+Owner explicitly requested public active Store channel/install packages. Independent
+Codex review found concrete baseline0.2.1 P1 installer/runtime bugs, now corrected
+and re-reviewed without remaining concrete P0/P1 for experimental publication.
+Source-linked final OAP now has ACL/AppStatus/shrinkwrap; data is persistent;
+quota64MiB accommodates frozen Xray; spawning Go thread pinned; stale runtime
+cleanup uses owner PID/boot/start identity. 33 native boundary/mock-lifecycle
+checks, Go race/vet, direct and hidden-app REALITY e2e pass. No vehicle access.
+Publication is explicitly experimental, not beta, and includes existing-uplink
+and separate-secure-profile prerequisites. Details in INSTALL-RU and review report.

@@ -17,6 +17,7 @@ import (
 	"os/exec"
 	"os/signal"
 	"path/filepath"
+	"runtime"
 	"syscall"
 	"time"
 )
@@ -28,6 +29,10 @@ func main() {
 	}
 }
 func run() error {
+	// Linux Pdeathsig belongs to the thread that forks the child. Keep this
+	// spawning goroutine/thread alive until every child has been waited for.
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	f := flag.NewFlagSet("mgu-xray", flag.ContinueOnError)

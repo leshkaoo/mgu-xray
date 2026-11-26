@@ -1,8 +1,8 @@
 # MGU-Xray
 
-**Локальный инженерный прототип, не beta и не готовый пакет для автомобиля.**
+**Экспериментальная сборка для MGU Store. Не beta; установка на BMW не проверена.**
 
-Подготовлен **кандидат 0.2.1**: нативный RHMI RU/EN экран, background-контроллер,
+Подготовлен **экспериментальный релиз 0.2.2**: нативный RHMI RU/EN экран, background-контроллер,
 согласованные engine/app пакеты и каталог Store. Это ещё **не проверенная
 установка на BMW**. [Состав и ограничения](packaging/CANDIDATE.md),
 [фактические проверки](packaging/CANDIDATE_TEST_REPORT.md).
@@ -56,7 +56,7 @@ sh scripts/build.sh
 [Исследование](RESEARCH.md), [архитектура](ARCHITECTURE.md),
 [риски](RISKS.md), [безопасность](SECURITY.md), [план](TODO.md),
 [прогресс](PROGRESS.md). К BMW не подключались. GitHub содержит публичные
-исходники и draft candidate, не активный установочный канал Store.
+исходники и экспериментальный каталог Store (канал Releases), не подтверждённую BMW beta.
 
 ## Макет интерфейса
 
@@ -73,5 +73,9 @@ Linux cross-builds do not verify the owner's head unit ABI or runtime.
 See TEST_REPORT.md for actual executed tests and remaining gates. No OEM,
 CAN, network, firmware, jailbreak or vehicle changes are performed. XHTTP,
 Happ subscriptions, iDrive UI, per-app integration and hard resource controls
-are not production-ready. Candidate 0.2.1 adds an experimental native RHMI
+are not production-ready. Candidate 0.2.2 adds an experimental native RHMI
 background-capable control, not a verified BMW release. No public release or paid infrastructure.
+
+## Установка через MGU Store
+
+[Инструкция RU](packaging/INSTALL-RU.md). Источник: `https://github.com/leshkaoo/mgu-xray`, канал **Releases**. Каталог: `https://github.com/leshkaoo/mgu-xray/releases/download/catalog/catalog.json`. Требуются существующий рабочий uplink и отдельный безопасно добавленный профиль.
