@@ -1,0 +1,59 @@
+{
+  "xray-go.mod": {
+    "url": "https://raw.githubusercontent.com/XTLS/Xray-core/v26.11.9/go.mod",
+    "status": 200,
+    "sha256": "05b5ec4430acb5898c9c95e3886a41b4399a4e05d605165833498432baa4ade9",
+    "bytes": 2666,
+    "header": [
+      "module github.com/xtls/xray-core",
+      "",
+      "go 1.27",
+      "",
+      "require (",
+      "\tgithub.com/apernet/quic-go v0.61.1-0.20260806010916-184d081eef3e"
+    ]
+  },
+  "xray-license": {
+    "url": "https://raw.githubusercontent.com/XTLS/Xray-core/v26.11.9/LICENSE",
+    "status": 200,
+    "sha256": "1f256ecad192880510e84ad60474eab7589218784b9a50bc7ceee34c2b91f1d5",
+    "bytes": 16725
+  },
+  "xray-tag": {
+    "url": "https://api.github.com/repos/XTLS/Xray-core/commits/v26.11.9",
+    "status": 200,
+    "sha256": "09e8eef104cb11952181cdb7fd868c29f0973c31aaa3e6519d36d622d49ff9fb",
+    "bytes": 6208,
+    "commit": "676eaf66f8f05d4d558ee7a74b4736623d3feeb9"
+  },
+  "singbox-license": {
+    "url": "https://raw.githubusercontent.com/SagerNet/sing-box/v1.14.4/LICENSE",
+    "status": 200,
+    "sha256": "650d5e3b99a446fb38e820fa87a49562e0c79eab868fff58618ac487a58e554c",
+    "bytes": 791
+  },
+  "xtls-reality": {
+    "url": "https://xtls.github.io/config/transport.html",
+    "status": 200,
+    "sha256": "280ffbbb091ee8678111df45600243de1e9fbf80a31a52a40c511c800f66cc6f",
+    "bytes": 79479
+  },
+  "xtls-xhttp": {
+    "url": "https://xtls.github.io/config/transports/splithttp.html",
+    "status": 200,
+    "sha256": "e2746997cee33d48a96288af1f3d42ef9fe9cb95a1436612804d2c794eb48501",
+    "bytes": 44937
+  },
+  "xtls-vless": {
+    "url": "https://xtls.github.io/config/outbounds/vless.html",
+    "status": 200,
+    "sha256": "c2dbc376cf64e566724c4b5cc2cb9c6ed3640ecd712eab16635d5ed8ded31b94",
+    "bytes": 60828
+  },
+  "xtls-socks": {
+    "url": "https://xtls.github.io/config/inbounds/socks.html",
+    "status": 200,
+    "sha256": "a72b7c789565d481d82b184aa47035b4c63febde90bc03819568f28f50dbcc17",
+    "bytes": 54472
+  }
+}

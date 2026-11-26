@@ -1,0 +1,10 @@
+research/upstream/
+build/
+dist/
+private/
+*.log
+__pycache__/
+*.pyc
+
+.DS_Store
+simulator/output/frame-*.png
