@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "1.3.0",
+  "containers": {
+    "1": {
+      "type": "state",
+      "name": "XR_Main",
+      "components": {
+        "20": {
+          "type": "label",
+          "name": "XR_status",
+          "properties": {
+            "Visible": {
+              "value": 1,
+              "type": "UInt"
+            },
+            "Focusable": {
+              "value": 0,
+              "type": "UInt"
+            }
+          },
+          "rows": [
+            {
+              "Text": {
+                "value": "MGU-Xray UI successfully started",
+                "type": "Text"
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

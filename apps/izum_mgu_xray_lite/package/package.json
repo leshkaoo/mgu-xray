@@ -1,0 +1,40 @@
+{
+  "name": "izum_mgu_xray_lite",
+  "version": "0.2.6",
+  "private": true,
+  "mguHmi": [
+    "ID7"
+  ],
+  "mguInternet": false,
+  "description": "Minimal UI launch diagnostics. No engine, supervisor, VPN or Internet. Not target-validated.",
+  "main": "javascript/runner.js",
+  "license": "MIT",
+  "oapAppSettings": {
+    "maxDiskUsage": 67108864,
+    "cpuLimit": 20,
+    "memoryThresholdKB": 98304,
+    "priority": "PRIO_MEDIUM",
+    "visibility": "FOREGROUND",
+    "latencyClass": "FOREGROUND",
+    "loggingId": "MXRY",
+    "userLoginRequired": false,
+    "backgroundPriority": 150,
+    "someipManifest": "manifest.json"
+  },
+  "files": [
+    "config",
+    "rhmiData",
+    "package.json",
+    "npm-shrinkwrap.json",
+    "permissions.json",
+    "manifest.json",
+    "javascript",
+    "LICENSE"
+  ],
+  "dependencies": {
+    "oap-sdk": "24.10.2"
+  },
+  "engines": {
+    "node": ">=8.9.4"
+  }
+}
